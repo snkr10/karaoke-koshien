@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import { LocalView, RoundInfo } from "@/lib/types";
 import { ScreenShell } from "@/components/ui/ScreenShell";
+import { showStandingsForEveryone } from "@/lib/roundActions";
 import { colors, fonts } from "@/lib/theme";
 
 interface Props {
@@ -29,18 +30,22 @@ function digitsToScore(digits: string): number {
 }
 
 export function ScoreInputView({ roomCode, hostToken, participantsById, currentRound, errorMessage, onNavigate }: Props) {
-  const performances = currentRound.performances;
+  const performances = useMemo(
+    () => [...currentRound.performances].sort((a, b) => a.order - b.order),
+    [currentRound.performances]
+  );
   const [selectedIndex, setSelectedIndex] = useState(() =>
     Math.max(0, performances.findIndex((p) => p.rawScore === null))
   );
   const [digits, setDigits] = useState("");
-  const [justConfirmed, setJustConfirmed] = useState(false);
+  const [editing, setEditing] = useState(true);
 
   const selected = performances[selectedIndex];
 
   useEffect(() => {
-    setDigits(selected?.rawScore != null ? scoreToDigits(selected.rawScore) : "");
-    setJustConfirmed(false);
+    const alreadyScored = selected?.rawScore != null;
+    setEditing(!alreadyScored);
+    setDigits("");
   }, [selectedIndex, currentRound.roundId]);
 
   const allConfirmed = performances.every((p) => p.rawScore !== null);
@@ -51,18 +56,13 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
     return selected.memberIds.length === 2 ? names : `${names}（ソロ）`;
   }, [selected, participantsById]);
 
-  const isEditingConfirmed = selected?.rawScore !== null && !justConfirmed;
-
   const pressDigit = (d: string) => {
-    if (!d) return;
-    if (isEditingConfirmed) {
-      setDigits(d);
-      return;
-    }
+    if (!d || !editing) return;
     setDigits((prev) => (prev.length >= SCORE_LENGTH ? prev : prev + d));
   };
 
   const backspace = () => {
+    if (!editing) return;
     setDigits((prev) => prev.slice(0, -1));
   };
 
@@ -71,7 +71,7 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
     const rawScore = digitsToScore(digits);
     const eventName = selected.rawScore !== null ? "score:correct" : "score:submit";
     getSocket().emit(eventName, { roomCode, hostToken, performanceId: selected.performanceId, rawScore });
-    setJustConfirmed(true);
+    setEditing(false);
 
     const nextIndex = performances.findIndex((p, i) => i !== selectedIndex && p.rawScore === null);
     if (nextIndex !== -1) {
@@ -79,9 +79,15 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
     }
   };
 
+  const startEditing = () => {
+    setDigits("");
+    setEditing(true);
+  };
+
   const complete = digits.length === SCORE_LENGTH;
-  const intDigits = digits.slice(0, 2);
-  const decDigits = digits.slice(2, 5);
+  const displayDigits = editing ? digits : scoreToDigits(selected?.rawScore ?? null);
+  const intDigits = displayDigits.slice(0, 2);
+  const decDigits = displayDigits.slice(2, 5);
 
   const renderSlot = (char: string | undefined, key: string) => {
     const lit = !!char;
@@ -138,7 +144,7 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
                 border: active ? "none" : "1px solid rgba(245,241,230,0.12)",
               }}
             >
-              {names} {confirmed ? "✓" : ""}
+              {p.order}. {names} {confirmed ? "✓" : ""}
             </div>
           );
         })}
@@ -147,9 +153,25 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
       {selected && (
         <>
           <div style={{ background: colors.card, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.08em", color: colors.creamDim50 }}>{label}</div>
-            <div style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>
-              ♪ {selected.suggestedSong.title}
+            <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.08em", color: colors.creamDim50 }}>
+              {selected.order}番目 ・ {label}
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+              <span
+                style={{
+                  fontFamily: fonts.heading,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  color: colors.creamDim50,
+                  background: "rgba(245,241,230,0.1)",
+                  borderRadius: 4,
+                  padding: "2px 6px",
+                }}
+              >
+                おすすめ曲
+              </span>
+              <span style={{ fontFamily: fonts.body, fontSize: 14, color: colors.cream }}>♪ {selected.suggestedSong.title}</span>
             </div>
           </div>
 
@@ -159,73 +181,90 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
             {[0, 1, 2].map((i) => renderSlot(decDigits[i], `dec${i}`))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-            {DIGIT_GRID.map((label2, i) =>
-              label2 ? (
+          {editing ? (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                {DIGIT_GRID.map((label2, i) =>
+                  label2 ? (
+                    <div
+                      key={i}
+                      onClick={() => pressDigit(label2)}
+                      className="kk-pressable"
+                      style={{
+                        height: 52,
+                        borderRadius: 10,
+                        background: "rgba(245,241,230,0.06)",
+                        border: "1px solid rgba(245,241,230,0.15)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: fonts.mono,
+                        fontSize: 19,
+                        color: colors.cream,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {label2}
+                    </div>
+                  ) : (
+                    <div key={i} style={{ height: 52 }} />
+                  )
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
                 <div
-                  key={i}
-                  onClick={() => pressDigit(label2)}
+                  onClick={backspace}
+                  className="kk-pressable"
                   style={{
+                    flex: 1,
                     height: 52,
                     borderRadius: 10,
-                    background: "rgba(245,241,230,0.06)",
-                    border: "1px solid rgba(245,241,230,0.15)",
+                    border: "1px solid rgba(245,241,230,0.25)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: fonts.mono,
-                    fontSize: 19,
-                    color: colors.cream,
+                    fontFamily: fonts.heading,
+                    fontSize: 14,
+                    color: colors.creamDim70,
                     cursor: "pointer",
                   }}
                 >
-                  {label2}
+                  ⌫ 点数を削除
                 </div>
-              ) : (
-                <div key={i} style={{ height: 52 }} />
-              )
-            )}
-          </div>
-
-          <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
-            <div
-              onClick={backspace}
-              style={{
-                flex: 1,
-                height: 52,
-                borderRadius: 10,
-                border: "1px solid rgba(245,241,230,0.25)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: fonts.heading,
-                fontSize: 15,
-                color: colors.creamDim70,
-                cursor: "pointer",
-              }}
-            >
-              ⌫ 削除
+                <div
+                  onClick={complete ? confirm : undefined}
+                  className={complete ? "kk-pressable" : undefined}
+                  style={{
+                    flex: 2,
+                    height: 52,
+                    borderRadius: 10,
+                    background: complete ? colors.cream : "rgba(245,241,230,0.08)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: fonts.heading,
+                    fontWeight: 800,
+                    fontSize: 15,
+                    color: complete ? colors.bg : "rgba(245,241,230,0.3)",
+                    cursor: complete ? "pointer" : "default",
+                  }}
+                >
+                  確定
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", marginTop: "auto" }}>
+              <div style={{ fontFamily: fonts.heading, fontSize: 13, fontWeight: 700, color: colors.gold }}>確定済み</div>
+              <div
+                onClick={startEditing}
+                style={{ fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, textDecoration: "underline", cursor: "pointer" }}
+              >
+                得点を修正する
+              </div>
             </div>
-            <div
-              onClick={complete ? confirm : undefined}
-              style={{
-                flex: 2,
-                height: 52,
-                borderRadius: 10,
-                background: complete ? colors.cream : "rgba(245,241,230,0.08)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: fonts.heading,
-                fontWeight: 800,
-                fontSize: 15,
-                color: complete ? colors.bg : "rgba(245,241,230,0.3)",
-                cursor: complete ? "pointer" : "default",
-              }}
-            >
-              確定
-            </div>
-          </div>
+          )}
         </>
       )}
 
@@ -235,7 +274,10 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
 
       {allConfirmed && (
         <div
-          onClick={() => onNavigate("standings")}
+          onClick={() => {
+            showStandingsForEveryone(roomCode, hostToken);
+            onNavigate("standings");
+          }}
           style={{
             width: "100%",
             background: colors.cream,

@@ -6,6 +6,7 @@ export interface ParticipantInfo {
 
 export interface PerformanceInfo {
   performanceId: string;
+  order: number;
   memberIds: string[];
   suggestedSong: { title: string; artist: string };
   rawScore: number | null;

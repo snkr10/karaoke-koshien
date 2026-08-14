@@ -7,6 +7,8 @@ import { ScreenShell, ScreenHeader } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { QRCodeBox } from "@/components/ui/QRCode";
+import { ModeToggle } from "@/components/ui/ModeToggle";
+import { RoundMode, startRound, showStandingsForEveryone } from "@/lib/roundActions";
 import { colors, fonts } from "@/lib/theme";
 
 interface Props {
@@ -21,6 +23,7 @@ interface Props {
 
 export function ParticipantsView({ roomCode, role, hostToken, participants, currentRound, errorMessage, onNavigate }: Props) {
   const [starting, setStarting] = useState(false);
+  const [mode, setMode] = useState<RoundMode | null>(null);
   const activeParticipants = participants.filter((p) => p.active);
 
   const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/join?code=${roomCode}` : "";
@@ -33,9 +36,13 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
   const handleStart = () => {
     if (!hostToken || activeParticipants.length < 2 || starting) return;
     setStarting(true);
-    const mode = Math.random() < 0.5 ? "individual" : "team";
-    getSocket().emit("round:start", { roomCode, hostToken, mode });
+    startRound(roomCode, hostToken, mode);
     setTimeout(() => setStarting(false), 1500);
+  };
+
+  const handleShowStandings = () => {
+    if (hostToken) showStandingsForEveryone(roomCode, hostToken);
+    onNavigate("standings");
   };
 
   if (role === "host") {
@@ -68,12 +75,14 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
             {activeParticipants.map((p, i) => (
               <div
                 key={p.participantId}
+                className="kk-item-enter"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
                   padding: "14px 16px",
                   borderBottom: i < activeParticipants.length - 1 ? "1px solid rgba(245,241,230,0.1)" : "none",
+                  animationDelay: `${i * 50}ms`,
                 }}
               >
                 <div
@@ -97,6 +106,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
                 <div style={{ flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.cream }}>{p.name}</div>
                 <div
                   onClick={() => handleRemove(p.participantId)}
+                  className="kk-pressable"
                   style={{
                     width: 28,
                     height: 28,
@@ -119,7 +129,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
         </div>
 
         {currentRound && (
-          <div onClick={() => onNavigate("standings")} style={{ textAlign: "center", fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, cursor: "pointer", textDecoration: "underline" }}>
+          <div onClick={handleShowStandings} style={{ textAlign: "center", fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, cursor: "pointer", textDecoration: "underline" }}>
             順位表を見る
           </div>
         )}
@@ -127,6 +137,8 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
         {errorMessage && (
           <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.red, textAlign: "center" }}>{errorMessage}</div>
         )}
+
+        <ModeToggle value={mode} onChange={setMode} />
 
         <PrimaryButton onClick={handleStart} disabled={activeParticipants.length < 2 || starting}>
           ラウンドを開始する

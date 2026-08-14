@@ -80,7 +80,7 @@ export async function getCurrentRoundFull(sessionId: string) {
   const round = await prisma.round.findFirst({
     where: { sessionId },
     orderBy: { roundNumber: "desc" },
-    include: { performances: { include: { members: true } } },
+    include: { performances: { orderBy: { order: "asc" }, include: { members: true } } },
   });
   return round;
 }
@@ -92,8 +92,9 @@ export async function serializeRoundStarted(sessionId: string) {
     roundId: round.id,
     roundNumber: round.roundNumber,
     mode: round.mode,
-    performances: round.performances.map((perf) => ({
+    performances: round.performances.map((perf, i) => ({
       performanceId: perf.id,
+      order: i + 1,
       memberIds: perf.members.map((m) => m.participantId),
       suggestedSong: { title: perf.songTitle, artist: perf.songArtist ?? "" },
       rawScore: perf.rawScore !== null ? Number(perf.rawScore) : null,

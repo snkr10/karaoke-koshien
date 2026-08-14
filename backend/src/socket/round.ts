@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../db";
-import { makeTeamPairs, Group } from "../lib/pairing";
+import { makeTeamPairs, shuffle, Group } from "../lib/pairing";
 import { assertHost, emitError, serializeRoundStarted } from "./state";
 
 async function getActiveParticipantIds(sessionId: string): Promise<string[]> {
@@ -23,13 +23,17 @@ async function getPreviousTeamPairs(sessionId: string, beforeRoundNumber: number
     .map((p) => p.members.map((m) => m.participantId));
 }
 
+// グループ（ペア/ソロ）を歌う順番としてもランダムに並び替えてから登録する
 async function createPerformancesForGroups(roundId: string, groups: Group[]) {
+  const orderedGroups = shuffle(groups);
   const usedSongIds: string[] = [];
-  for (const group of groups) {
+  for (let i = 0; i < orderedGroups.length; i++) {
+    const group = orderedGroups[i];
     const song = await pickSongExcludingWithTracking(usedSongIds);
     const performance = await prisma.performance.create({
       data: {
         roundId,
+        order: i,
         songTitle: song.title,
         songArtist: song.artist,
       },

@@ -43,6 +43,7 @@ export default function RoomPage() {
     if (host) {
       setRole("host");
       setHostToken(host.hostToken);
+      if (host.participantId) setSelfParticipantId(host.participantId);
       setReady(true);
       return;
     }
@@ -114,6 +115,11 @@ export default function RoomPage() {
       setTimeout(() => setErrorMessage(null), 4000);
     };
 
+    // ホストの「順位表を見る」操作を受けて、参加者を含む全員の画面を順位表に切り替える
+    const onStandingsShow = () => {
+      setLocalView((prev) => (prev === "final" ? prev : "standings"));
+    };
+
     socket.on("connect", requestSync);
     socket.on("session:state_full", onStateFull);
     socket.on("session:state", onState);
@@ -121,6 +127,7 @@ export default function RoomPage() {
     socket.on("score:updated", onScoreUpdated);
     socket.on("ranking:updated", onRankingUpdated);
     socket.on("session:final_result", onFinalResult);
+    socket.on("standings:show", onStandingsShow);
     socket.on("error", onError);
 
     if (socket.connected) requestSync();
@@ -133,6 +140,7 @@ export default function RoomPage() {
       socket.off("score:updated", onScoreUpdated);
       socket.off("ranking:updated", onRankingUpdated);
       socket.off("session:final_result", onFinalResult);
+      socket.off("standings:show", onStandingsShow);
       socket.off("error", onError);
     };
   }, [ready, roomCode, selfParticipantId]);

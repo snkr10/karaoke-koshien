@@ -18,6 +18,7 @@ export function PrimaryButton({
     <button
       onClick={onClick}
       disabled={disabled}
+      className={disabled ? undefined : "kk-pressable"}
       style={{
         width: "100%",
         background: disabled ? "rgba(245,241,230,0.25)" : colors.cream,
@@ -52,6 +53,7 @@ export function SecondaryButton({
   return (
     <button
       onClick={onClick}
+      className="kk-pressable"
       style={{
         width: "100%",
         background: "transparent",

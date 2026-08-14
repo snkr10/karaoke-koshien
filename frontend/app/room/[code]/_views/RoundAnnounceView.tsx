@@ -17,13 +17,13 @@ interface Props {
   onNavigate: (v: LocalView) => void;
 }
 
-const TEAM_LABELS = ["チームA", "チームB", "チームC", "チームD", "チームE", "チームF"];
-
 export function RoundAnnounceView({ roomCode, role, hostToken, participantsById, currentRound, errorMessage, onNavigate }: Props) {
   const handleReshuffle = () => {
     if (!hostToken) return;
     getSocket().emit("round:reshuffle_pairs", { roomCode, hostToken, roundId: currentRound.roundId });
   };
+
+  const ordered = [...currentRound.performances].sort((a, b) => a.order - b.order);
 
   return (
     <ScreenShell padding="72px 24px 32px" align="center">
@@ -48,31 +48,59 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
         >
           {currentRound.mode === "team" ? "チーム戦（デュエット）" : "個人戦"}
         </div>
+        <div style={{ fontFamily: fonts.body, fontSize: 11, color: colors.creamDim40, marginTop: 2 }}>
+          歌う順番もランダムに決定されました
+        </div>
       </div>
 
       <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 14 }}>
-        {(() => {
-          let teamIndex = -1;
-          return currentRound.performances.map((perf) => {
-            const names = perf.memberIds.map((id) => participantsById[id] ?? "?").join(" ＆ ");
-            if (perf.memberIds.length === 2) teamIndex++;
-            const label = perf.memberIds.length === 2 ? TEAM_LABELS[teamIndex] ?? `チーム${teamIndex + 1}` : `${names}（ソロ）`;
-            return (
-            <Card key={perf.performanceId}>
-              <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.1em", color: colors.creamDim50 }}>
-                {label}
+        {ordered.map((perf, idx) => {
+          const names = perf.memberIds.map((id) => participantsById[id] ?? "?").join(" ＆ ");
+          const isTeam = perf.memberIds.length === 2;
+          return (
+            <Card key={perf.performanceId} index={idx}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.1em", color: colors.creamDim50 }}>
+                  {isTeam ? "チーム" : "ソロ"}
+                </div>
+                <div
+                  style={{
+                    fontFamily: fonts.mono,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: colors.gold,
+                    border: `1px solid ${colors.goldBorder}`,
+                    borderRadius: 100,
+                    padding: "2px 9px",
+                  }}
+                >
+                  {perf.order}番目に歌う
+                </div>
               </div>
-              <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 19, color: colors.cream }}>
-                {perf.memberIds.length === 2 ? names : " "}
+              <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 19, color: colors.cream }}>{names}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    fontFamily: fonts.heading,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    color: colors.creamDim50,
+                    background: "rgba(245,241,230,0.1)",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                  }}
+                >
+                  おすすめ曲
+                </span>
+                <span style={{ fontFamily: fonts.body, fontSize: 14, color: colors.creamDim60 }}>
+                  ♪ {perf.suggestedSong.title}
+                  {perf.suggestedSong.artist ? ` / ${perf.suggestedSong.artist}` : ""}
+                </span>
               </div>
-              <div style={{ fontFamily: fonts.body, fontSize: 14, color: colors.creamDim60 }}>
-                ♪ {perf.suggestedSong.title}
-                {perf.suggestedSong.artist ? ` / ${perf.suggestedSong.artist}` : ""}
-              </div>
-              </Card>
-            );
-          });
-        })()}
+            </Card>
+          );
+        })}
       </div>
 
       {errorMessage && (

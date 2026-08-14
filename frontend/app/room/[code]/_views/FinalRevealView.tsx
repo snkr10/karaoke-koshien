@@ -76,7 +76,7 @@ export function FinalRevealView({ finalResult }: { finalResult: FinalResult }) {
           pointerEvents: "none",
         }}
       />
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative" }}>
+      <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative" }}>
         <div
           style={{
             fontFamily: fonts.heading,
@@ -125,6 +125,7 @@ export function FinalRevealView({ finalResult }: { finalResult: FinalResult }) {
           return (
             <div
               key={row.participantId}
+              className="kk-item-enter"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -133,6 +134,7 @@ export function FinalRevealView({ finalResult }: { finalResult: FinalResult }) {
                 border: isFirst ? `1px solid ${colors.goldBorder}` : "none",
                 borderRadius: 12,
                 padding: "12px 16px",
+                animationDelay: `${200 + i * 80}ms`,
               }}
             >
               <div style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: 16, color: isFirst ? colors.gold : colors.creamDim50, width: 18 }}>

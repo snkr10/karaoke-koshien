@@ -29,6 +29,7 @@ export function ScreenShell({
       }}
     >
       <div
+        className="kk-screen-enter"
         style={{
           flex: 1,
           padding,

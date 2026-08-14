@@ -8,7 +8,7 @@ export type Group = string[]; // 1人=ソロ, 2人=ペア
 
 const MAX_SHUFFLE_ATTEMPTS = 20;
 
-function shuffle<T>(arr: T[]): T[] {
+export function shuffle<T>(arr: T[]): T[] {
   const result = [...arr];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

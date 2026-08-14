@@ -16,6 +16,60 @@ button {
   font-family: inherit;
 }
 
+@keyframes screenEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes itemEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.kk-screen-enter {
+  animation: screenEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.kk-item-enter {
+  animation: itemEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.kk-pop-in {
+  animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.kk-pressable {
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.kk-pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
 @keyframes goldGlow {
   0%,
   100% {

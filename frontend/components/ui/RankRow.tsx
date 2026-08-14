@@ -8,17 +8,21 @@ export function RankRow({
   display,
   isFirst,
   compact,
+  index,
 }: {
   rank: number;
   name: string;
   display: string;
   isFirst: boolean;
   compact?: boolean;
+  index?: number;
 }) {
   const padding = compact ? "12px 16px" : "14px 16px";
+  const animationDelay = index != null ? `${index * 60}ms` : undefined;
   if (isFirst) {
     return (
       <div
+        className="kk-item-enter"
         style={{
           display: "flex",
           alignItems: "center",
@@ -27,6 +31,7 @@ export function RankRow({
           border: `1px solid ${colors.goldBorder}`,
           borderRadius: 12,
           padding,
+          animationDelay,
         }}
       >
         <div style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: compact ? 16 : 18, color: colors.gold, width: 20 }}>
@@ -43,6 +48,7 @@ export function RankRow({
   }
   return (
     <div
+      className="kk-item-enter"
       style={{
         display: "flex",
         alignItems: "center",
@@ -50,6 +56,7 @@ export function RankRow({
         background: colors.card,
         borderRadius: 12,
         padding,
+        animationDelay,
       }}
     >
       <div

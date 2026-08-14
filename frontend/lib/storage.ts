@@ -5,6 +5,8 @@ interface HostRecord {
   roomCode: string;
   hostToken: string;
   sessionId: string;
+  participantId?: string;
+  name?: string;
 }
 
 interface ParticipantRecord {

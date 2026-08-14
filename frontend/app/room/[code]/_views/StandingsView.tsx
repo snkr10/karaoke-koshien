@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { getSocket } from "@/lib/socket";
 import { LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ScreenShell, ScreenHeader } from "@/components/ui/ScreenShell";
 import { PillTabs } from "@/components/ui/PillTabs";
 import { RankRow } from "@/components/ui/RankRow";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/PrimaryButton";
+import { ModeToggle } from "@/components/ui/ModeToggle";
+import { RoundMode, startRound } from "@/lib/roundActions";
+import { getSocket } from "@/lib/socket";
 import { colors, fonts } from "@/lib/theme";
 
 interface RankingRow {
@@ -41,6 +43,7 @@ export function StandingsView({
 }: Props) {
   const [tab, setTab] = useState<"total" | "points">("total");
   const [starting, setStarting] = useState(false);
+  const [mode, setMode] = useState<RoundMode | null>(null);
 
   const rows =
     tab === "total"
@@ -52,8 +55,7 @@ export function StandingsView({
     const activeCount = participants.filter((p) => p.active).length;
     if (activeCount < 2) return;
     setStarting(true);
-    const mode = Math.random() < 0.5 ? "individual" : "team";
-    getSocket().emit("round:start", { roomCode, hostToken, mode });
+    startRound(roomCode, hostToken, mode);
     setTimeout(() => setStarting(false), 1500);
   };
 
@@ -89,6 +91,7 @@ export function StandingsView({
             name={participantsById[row.participantId] ?? "?"}
             display={row.display}
             isFirst={i === 0}
+            index={i}
           />
         ))}
       </div>
@@ -99,6 +102,7 @@ export function StandingsView({
 
       {role === "host" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
+          <ModeToggle value={mode} onChange={setMode} />
           <PrimaryButton onClick={handleNextRound} disabled={starting}>
             次のラウンドへ
           </PrimaryButton>

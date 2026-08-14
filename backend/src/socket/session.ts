@@ -59,6 +59,18 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
     }
   );
 
+  // ホストが「順位表を見る」を操作した際、参加者全員の画面も順位表に切り替えさせる
+  socket.on(
+    "standings:show",
+    async (payload: { roomCode: string; hostToken: string }) => {
+      const { session, valid } = await assertHost(payload.roomCode, payload.hostToken);
+      if (!valid || !session) {
+        return emitError(socket, "INVALID_HOST_TOKEN", "ホスト権限が確認できませんでした");
+      }
+      io.to(session.roomCode).emit("standings:show", {});
+    }
+  );
+
   socket.on(
     "session:sync_request",
     async (payload: { roomCode: string; participantId?: string }) => {
