@@ -18,7 +18,7 @@ export async function getSessionByRoomCode(roomCode: string) {
 
 export async function assertHost(roomCode: string, hostToken: string) {
   const session = await getSessionByRoomCode(roomCode);
-  if (!session) return { session: null as const, valid: false as const };
+  if (!session) return { session: null, valid: false as const };
   if (session.hostToken !== hostToken) return { session, valid: false as const };
   return { session, valid: true as const };
 }

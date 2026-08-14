@@ -1,0 +1,186 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { getSocket } from "@/lib/socket";
+import { getHostRecord, getParticipantRecord } from "@/lib/storage";
+import { FinalResult, LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
+import { ParticipantsView } from "./_views/ParticipantsView";
+import { RoundAnnounceView } from "./_views/RoundAnnounceView";
+import { ScoreInputView } from "./_views/ScoreInputView";
+import { StandingsView } from "./_views/StandingsView";
+import { FinalRevealView } from "./_views/FinalRevealView";
+import { ScreenShell } from "@/components/ui/ScreenShell";
+import { colors, fonts } from "@/lib/theme";
+
+interface RankingRow {
+  participantId: string;
+  totalScore?: number;
+  rankPoints?: number;
+}
+
+export default function RoomPage() {
+  const params = useParams<{ code: string }>();
+  const roomCode = (params.code as string).toUpperCase();
+  const router = useRouter();
+
+  const [ready, setReady] = useState(false);
+  const [role, setRole] = useState<"host" | "participant" | null>(null);
+  const [hostToken, setHostToken] = useState<string | null>(null);
+  const [selfParticipantId, setSelfParticipantId] = useState<string | null>(null);
+
+  const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
+  const [currentRound, setCurrentRound] = useState<RoundInfo | null>(null);
+  const [totalScoreRanking, setTotalScoreRanking] = useState<RankingRow[]>([]);
+  const [rankPointsRanking, setRankPointsRanking] = useState<RankingRow[]>([]);
+  const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localView, setLocalView] = useState<LocalView>("participants");
+
+  // 自分がホストか参加者かをlocalStorageから復元
+  useEffect(() => {
+    const host = getHostRecord(roomCode);
+    if (host) {
+      setRole("host");
+      setHostToken(host.hostToken);
+      setReady(true);
+      return;
+    }
+    const participant = getParticipantRecord(roomCode);
+    if (participant) {
+      setRole("participant");
+      setSelfParticipantId(participant.participantId);
+      setReady(true);
+      return;
+    }
+    router.replace(`/join?code=${roomCode}`);
+  }, [roomCode, router]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const socket = getSocket();
+
+    const requestSync = () => {
+      socket.emit("session:sync_request", { roomCode, participantId: selfParticipantId ?? undefined });
+    };
+
+    const onStateFull = (state: {
+      session: { status: string };
+      participants: ParticipantInfo[];
+      currentRound: RoundInfo | null;
+      totalScoreRanking: RankingRow[];
+      rankPointsRanking: RankingRow[];
+    }) => {
+      setParticipants(state.participants);
+      setCurrentRound(state.currentRound);
+      setTotalScoreRanking(state.totalScoreRanking);
+      setRankPointsRanking(state.rankPointsRanking);
+      if (state.currentRound) setLocalView((prev) => (prev === "participants" ? "round" : prev));
+    };
+
+    const onState = (payload: { participants: ParticipantInfo[] }) => {
+      setParticipants(payload.participants);
+    };
+
+    const onRoundStarted = (round: RoundInfo) => {
+      setCurrentRound(round);
+      setLocalView("round");
+    };
+
+    const onScoreUpdated = (payload: { performanceId: string; rawScore: number }) => {
+      setCurrentRound((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          performances: prev.performances.map((p) =>
+            p.performanceId === payload.performanceId ? { ...p, rawScore: payload.rawScore } : p
+          ),
+        };
+      });
+    };
+
+    const onRankingUpdated = (payload: { totalScoreRanking: RankingRow[]; rankPointsRanking: RankingRow[] }) => {
+      setTotalScoreRanking(payload.totalScoreRanking);
+      setRankPointsRanking(payload.rankPointsRanking);
+    };
+
+    const onFinalResult = (payload: FinalResult) => {
+      setFinalResult(payload);
+      setLocalView("final");
+    };
+
+    const onError = (payload: { code: string; message: string }) => {
+      setErrorMessage(payload.message);
+      setTimeout(() => setErrorMessage(null), 4000);
+    };
+
+    socket.on("connect", requestSync);
+    socket.on("session:state_full", onStateFull);
+    socket.on("session:state", onState);
+    socket.on("round:started", onRoundStarted);
+    socket.on("score:updated", onScoreUpdated);
+    socket.on("ranking:updated", onRankingUpdated);
+    socket.on("session:final_result", onFinalResult);
+    socket.on("error", onError);
+
+    if (socket.connected) requestSync();
+
+    return () => {
+      socket.off("connect", requestSync);
+      socket.off("session:state_full", onStateFull);
+      socket.off("session:state", onState);
+      socket.off("round:started", onRoundStarted);
+      socket.off("score:updated", onScoreUpdated);
+      socket.off("ranking:updated", onRankingUpdated);
+      socket.off("session:final_result", onFinalResult);
+      socket.off("error", onError);
+    };
+  }, [ready, roomCode, selfParticipantId]);
+
+  const participantsById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of participants) map[p.participantId] = p.name;
+    return map;
+  }, [participants]);
+
+  if (!ready || !role) {
+    return (
+      <ScreenShell align="center" padding="0">
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim55 }}>読み込み中...</div>
+        </div>
+      </ScreenShell>
+    );
+  }
+
+  const commonProps = {
+    roomCode,
+    role,
+    hostToken,
+    participants,
+    participantsById,
+    currentRound,
+    totalScoreRanking,
+    rankPointsRanking,
+    errorMessage,
+    onNavigate: setLocalView,
+  } as const;
+
+  if (localView === "final" && finalResult) {
+    return <FinalRevealView finalResult={finalResult} />;
+  }
+
+  if (localView === "score" && currentRound && role === "host" && hostToken) {
+    return <ScoreInputView {...commonProps} hostToken={hostToken} currentRound={currentRound} />;
+  }
+
+  if (localView === "round" && currentRound) {
+    return <RoundAnnounceView {...commonProps} currentRound={currentRound} />;
+  }
+
+  if (localView === "standings") {
+    return <StandingsView {...commonProps} />;
+  }
+
+  return <ParticipantsView {...commonProps} />;
+}

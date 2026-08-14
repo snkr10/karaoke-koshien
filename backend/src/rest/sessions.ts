@@ -2,6 +2,8 @@ import { Router } from "express";
 import { prisma } from "../db";
 import { generateRoomCode } from "../lib/roomCode";
 import { generateHostToken } from "../lib/hostToken";
+import { broadcastParticipants } from "../socket/state";
+import { getIoInstance } from "../socket/ioInstance";
 
 export const sessionsRouter = Router();
 
@@ -59,6 +61,7 @@ sessionsRouter.post("/sessions/:roomCode/participants", async (req, res) => {
     data: { sessionId: session.id, name: resolvedName },
   });
 
+  await broadcastParticipants(getIoInstance(), session.roomCode, session.id);
   res.json({ participantId: participant.id, sessionId: session.id, name: resolvedName });
 });
 
