@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSession } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
-import { saveHostRecord } from "@/lib/storage";
+import { saveHostRecord, setSessionRole } from "@/lib/storage";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { colors, fonts } from "@/lib/theme";
@@ -37,6 +37,7 @@ export default function HostCreatePage() {
 
       const onJoined = (payload: { participantId: string }) => {
         saveHostRecord({ sessionId, roomCode, hostToken, participantId: payload.participantId, name: name.trim() });
+        setSessionRole(roomCode, "host");
         socket.off("participant:joined", onJoined);
         router.replace(`/room/${roomCode}`);
       };

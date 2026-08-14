@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSocket } from "@/lib/socket";
-import { saveParticipantRecord } from "@/lib/storage";
+import { saveParticipantRecord, setSessionRole } from "@/lib/storage";
 import { ScreenShell, ScreenHeader } from "@/components/ui/ScreenShell";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { colors, fonts } from "@/lib/theme";
@@ -21,6 +21,7 @@ function JoinForm() {
 
     const onJoined = (payload: { participantId: string; sessionId: string }) => {
       saveParticipantRecord({ roomCode: roomCode.toUpperCase(), participantId: payload.participantId, name });
+      setSessionRole(roomCode.toUpperCase(), "participant");
       router.push(`/room/${roomCode.toUpperCase()}`);
     };
     const onError = (payload: { code: string; message: string }) => {

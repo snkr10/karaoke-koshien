@@ -17,6 +17,19 @@ interface ParticipantRecord {
 
 const HOST_KEY = "karaoke-koshien:host";
 const PARTICIPANT_KEY = "karaoke-koshien:participant";
+const ROLE_KEY_PREFIX = "karaoke-koshien:role:";
+
+// hostToken/participantIdはlocalStorage（端末をまたいだ再接続用）に保存する一方、
+// 同じブラウザで複数タブを開いて検証する場合に他タブの記録と混同しないよう、
+// 「このタブがそのルームでどちらの役割としてログインしたか」はタブ単位のsessionStorageで管理する
+export function setSessionRole(roomCode: string, role: "host" | "participant") {
+  sessionStorage.setItem(ROLE_KEY_PREFIX + roomCode, role);
+}
+
+export function getSessionRole(roomCode: string): "host" | "participant" | null {
+  const value = sessionStorage.getItem(ROLE_KEY_PREFIX + roomCode);
+  return value === "host" || value === "participant" ? value : null;
+}
 
 export function saveHostRecord(record: HostRecord) {
   localStorage.setItem(HOST_KEY, JSON.stringify(record));

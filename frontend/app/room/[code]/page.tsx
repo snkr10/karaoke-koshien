@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socket";
-import { getHostRecord, getParticipantRecord } from "@/lib/storage";
+import { getHostRecord, getParticipantRecord, getSessionRole, setSessionRole } from "@/lib/storage";
 import { FinalResult, LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ParticipantsView } from "./_views/ParticipantsView";
 import { RoundAnnounceView } from "./_views/RoundAnnounceView";
@@ -37,23 +37,44 @@ export default function RoomPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localView, setLocalView] = useState<LocalView>("participants");
 
-  // 自分がホストか参加者かをlocalStorageから復元
+  // 自分がホストか参加者かを復元する。
+  // hostToken/participantIdはlocalStorage（端末をまたいだ再接続用）に保存されているが、
+  // 同じブラウザで複数タブ（例: ホスト用タブと参加者用タブ）を開いて検証している場合に
+  // 他タブの記録と混同しないよう、まずタブ単位のsessionStorageの役割ヒントを優先する
   useEffect(() => {
-    const host = getHostRecord(roomCode);
-    if (host) {
-      setRole("host");
-      setHostToken(host.hostToken);
-      if (host.participantId) setSelfParticipantId(host.participantId);
-      setReady(true);
-      return;
+    const hint = getSessionRole(roomCode);
+
+    if (hint === "participant") {
+      const participant = getParticipantRecord(roomCode);
+      if (participant) {
+        setRole("participant");
+        setSelfParticipantId(participant.participantId);
+        setReady(true);
+        return;
+      }
     }
+
+    if (hint === "host" || hint === null) {
+      const host = getHostRecord(roomCode);
+      if (host) {
+        setRole("host");
+        setHostToken(host.hostToken);
+        if (host.participantId) setSelfParticipantId(host.participantId);
+        setSessionRole(roomCode, "host");
+        setReady(true);
+        return;
+      }
+    }
+
     const participant = getParticipantRecord(roomCode);
     if (participant) {
       setRole("participant");
       setSelfParticipantId(participant.participantId);
+      setSessionRole(roomCode, "participant");
       setReady(true);
       return;
     }
+
     router.replace(`/join?code=${roomCode}`);
   }, [roomCode, router]);
 
