@@ -57,7 +57,7 @@ export function aggregateByParticipant(
 // 総合力スコア = 勝敗ポイント合計 × COMPOSITE_RANK_POINT_WEIGHT + 平均得点
 // 勝敗ポイントを主軸にしつつ、平均得点で拮抗させる独自のブレンド指標
 // （合計ではなく平均を使うことで、出場回数や1回の高得点だけで差が開きすぎないようにする）
-export const COMPOSITE_RANK_POINT_WEIGHT = 5;
+export const COMPOSITE_RANK_POINT_WEIGHT = 3;
 
 export function aggregateComposite(rows: PerformanceMembershipRow[]): ParticipantRankingEntry[] {
   const rankPointTotals = new Map<string, number>();
