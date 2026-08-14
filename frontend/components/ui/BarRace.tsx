@@ -152,7 +152,6 @@ export function BarRace({
         return (
           <div
             key={e.participantId}
-            className={isTenseContender ? "kk-bar-row-shake" : undefined}
             style={{
               position: "absolute",
               top: 0,
@@ -160,52 +159,60 @@ export function BarRace({
               width: "100%",
               height: ROW_HEIGHT,
               transform: `translateY(${rank * (ROW_HEIGHT + ROW_GAP)}px)`,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
             }}
           >
-            <Avatar name={e.name} avatarType={e.avatarType} avatarValue={e.avatarValue} size={30} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span
-                  style={{
-                    fontFamily: fonts.heading,
-                    fontWeight: 700,
-                    fontSize: 13,
-                    color: isFirst ? colors.gold : colors.cream,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {e.name}
-                </span>
-                <span
-                  style={{
-                    fontFamily: fonts.mono,
-                    fontWeight: 700,
-                    fontSize: 13,
-                    color: isFirst ? colors.gold : colors.creamDim70,
-                    flexShrink: 0,
-                    marginLeft: 8,
-                  }}
-                >
-                  {format(value)}
-                </span>
-              </div>
-              <div style={{ height: 10, borderRadius: 100, background: "rgba(245,241,230,0.08)", overflow: "hidden" }}>
-                <div
-                  className={isTenseContender ? "kk-bar-tense" : undefined}
-                  style={{
-                    height: "100%",
-                    width: `${widthPct}%`,
-                    borderRadius: 100,
-                    background: isFirst || isTenseContender
-                      ? "linear-gradient(90deg, rgba(255,199,44,0.7), #FFC72C)"
-                      : "rgba(245,241,230,0.35)",
-                  }}
-                />
+            <div
+              className={isTenseContender ? "kk-bar-row-shake" : undefined}
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Avatar name={e.name} avatarType={e.avatarType} avatarValue={e.avatarValue} size={30} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span
+                    style={{
+                      fontFamily: fonts.heading,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: isFirst ? colors.gold : colors.cream,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {e.name}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: fonts.mono,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: isFirst ? colors.gold : colors.creamDim70,
+                      flexShrink: 0,
+                      marginLeft: 8,
+                    }}
+                  >
+                    {format(value)}
+                  </span>
+                </div>
+                <div style={{ height: 10, borderRadius: 100, background: "rgba(245,241,230,0.08)", overflow: "hidden" }}>
+                  <div
+                    className={isTenseContender ? "kk-bar-tense" : undefined}
+                    style={{
+                      height: "100%",
+                      width: `${widthPct}%`,
+                      borderRadius: 100,
+                      background: isFirst || isTenseContender
+                        ? "linear-gradient(90deg, rgba(255,199,44,0.7), #FFC72C)"
+                        : "rgba(245,241,230,0.35)",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
