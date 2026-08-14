@@ -2,6 +2,8 @@ export interface ParticipantInfo {
   participantId: string;
   name: string;
   active: boolean;
+  avatarType?: "preset" | "photo" | null;
+  avatarValue?: string | null;
 }
 
 export interface PerformanceInfo {

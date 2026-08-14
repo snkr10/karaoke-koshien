@@ -42,13 +42,22 @@ sessionsRouter.get("/sessions/:roomCode", async (req, res) => {
   res.json({ exists: true, status: session.status });
 });
 
+const MAX_AVATAR_VALUE_LENGTH = 300_000; // data URL想定（数十〜100KB程度のJPEGを見込む）
+
 // POST /api/sessions/:roomCode/participants - 参加者登録
 sessionsRouter.post("/sessions/:roomCode/participants", async (req, res) => {
   const roomCode = req.params.roomCode.toUpperCase();
-  const { name } = req.body as { name?: string };
+  const { name, avatarType, avatarValue } = req.body as {
+    name?: string;
+    avatarType?: "preset" | "photo";
+    avatarValue?: string;
+  };
 
   if (!name || !name.trim()) {
     return res.status(400).json({ code: "INVALID_NAME", message: "ニックネームを入力してください" });
+  }
+  if (avatarValue && avatarValue.length > MAX_AVATAR_VALUE_LENGTH) {
+    return res.status(400).json({ code: "AVATAR_TOO_LARGE", message: "アイコン画像が大きすぎます" });
   }
 
   const session = await prisma.session.findUnique({ where: { roomCode } });
@@ -58,7 +67,12 @@ sessionsRouter.post("/sessions/:roomCode/participants", async (req, res) => {
 
   const resolvedName = await resolveUniqueName(session.id, name.trim());
   const participant = await prisma.participant.create({
-    data: { sessionId: session.id, name: resolvedName },
+    data: {
+      sessionId: session.id,
+      name: resolvedName,
+      avatarType: avatarType ?? null,
+      avatarValue: avatarValue ?? null,
+    },
   });
 
   await broadcastParticipants(getIoInstance(), session.roomCode, session.id);

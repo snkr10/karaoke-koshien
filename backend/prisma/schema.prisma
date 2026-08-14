@@ -33,11 +33,13 @@ model Session {
 }
 
 model Participant {
-  id        String   @id @default(uuid())
-  sessionId String   @map("session_id")
-  name      String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  sessionId   String   @map("session_id")
+  name        String
+  active      Boolean  @default(true)
+  avatarType  String?  @map("avatar_type") // "preset" | "photo"
+  avatarValue String?  @map("avatar_value") @db.Text // presetの絵文字key、またはphotoのdata URL
+  createdAt   DateTime @default(now()) @map("created_at")
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   memberships PerformanceMember[]

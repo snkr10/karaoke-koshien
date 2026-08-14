@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSocket } from "@/lib/socket";
-import { LocalView, RoundInfo } from "@/lib/types";
+import { LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ScreenShell } from "@/components/ui/ScreenShell";
+import { Avatar } from "@/components/ui/Avatar";
 import { showStandingsForEveryone } from "@/lib/roundActions";
 import { colors, fonts } from "@/lib/theme";
 
@@ -11,6 +12,7 @@ interface Props {
   roomCode: string;
   hostToken: string;
   participantsById: Record<string, string>;
+  participantsMap: Record<string, ParticipantInfo>;
   currentRound: RoundInfo;
   errorMessage: string | null;
   onNavigate: (v: LocalView) => void;
@@ -29,7 +31,7 @@ function digitsToScore(digits: string): number {
   return Number(`${padded.slice(0, 2)}.${padded.slice(2)}`);
 }
 
-export function ScoreInputView({ roomCode, hostToken, participantsById, currentRound, errorMessage, onNavigate }: Props) {
+export function ScoreInputView({ roomCode, hostToken, participantsById, participantsMap, currentRound, errorMessage, onNavigate }: Props) {
   const performances = useMemo(
     () => [...currentRound.performances].sort((a, b) => a.order - b.order),
     [currentRound.performances]
@@ -153,8 +155,22 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
       {selected && (
         <>
           <div style={{ background: colors.card, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.08em", color: colors.creamDim50 }}>
-              {selected.order}番目 ・ {label}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex" }}>
+                {selected.memberIds.map((id, mi) => (
+                  <div key={id} style={{ marginLeft: mi === 0 ? 0 : -8 }}>
+                    <Avatar
+                      name={participantsMap[id]?.name ?? "?"}
+                      avatarType={participantsMap[id]?.avatarType}
+                      avatarValue={participantsMap[id]?.avatarValue}
+                      size={24}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily: fonts.heading, fontSize: 11, letterSpacing: "0.08em", color: colors.creamDim50 }}>
+                {selected.order}番目 ・ {label}
+              </div>
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
               <span
@@ -175,7 +191,11 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0" }}>
+          <div
+            key={`${selected.performanceId}-${editing}`}
+            className={!editing ? "kk-score-flash" : undefined}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0" }}
+          >
             {[0, 1].map((i) => renderSlot(intDigits[i], `int${i}`))}
             <div style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: 28, color: "rgba(245,241,230,0.3)" }}>.</div>
             {[0, 1, 2].map((i) => renderSlot(decDigits[i], `dec${i}`))}
@@ -256,7 +276,13 @@ export function ScoreInputView({ roomCode, hostToken, participantsById, currentR
             </>
           ) : (
             <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", marginTop: "auto" }}>
-              <div style={{ fontFamily: fonts.heading, fontSize: 13, fontWeight: 700, color: colors.gold }}>確定済み</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: fonts.heading, fontSize: 13, fontWeight: 700, color: colors.gold }}>
+                <span className="kk-sparkle">✨</span>
+                確定済み
+                <span className="kk-sparkle" style={{ animationDelay: "0.3s" }}>
+                  ✨
+                </span>
+              </div>
               <div
                 onClick={startEditing}
                 style={{ fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, textDecoration: "underline", cursor: "pointer" }}

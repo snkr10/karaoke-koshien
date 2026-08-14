@@ -4,8 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSocket } from "@/lib/socket";
 import { saveParticipantRecord, setSessionRole } from "@/lib/storage";
+import { AvatarValue } from "@/lib/avatar";
 import { ScreenShell, ScreenHeader } from "@/components/ui/ScreenShell";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { AvatarPicker } from "@/components/ui/AvatarPicker";
 import { colors, fonts } from "@/lib/theme";
 
 function JoinForm() {
@@ -13,6 +15,7 @@ function JoinForm() {
   const searchParams = useSearchParams();
   const [roomCode, setRoomCode] = useState(searchParams.get("code")?.toUpperCase() ?? "");
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState<AvatarValue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,7 +44,12 @@ function JoinForm() {
     if (!roomCode.trim() || !name.trim() || submitting) return;
     setError(null);
     setSubmitting(true);
-    getSocket().emit("participant:join", { roomCode: roomCode.trim().toUpperCase(), name: name.trim() });
+    getSocket().emit("participant:join", {
+      roomCode: roomCode.trim().toUpperCase(),
+      name: name.trim(),
+      avatarType: avatar?.avatarType,
+      avatarValue: avatar?.avatarValue,
+    });
   };
 
   return (
@@ -104,6 +112,8 @@ function JoinForm() {
             }}
           />
         </div>
+
+        <AvatarPicker name={name} value={avatar} onChange={setAvatar} />
       </div>
 
       <PrimaryButton onClick={handleSubmit} disabled={submitting}>

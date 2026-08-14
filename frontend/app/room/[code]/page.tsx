@@ -172,6 +172,12 @@ export default function RoomPage() {
     return map;
   }, [participants]);
 
+  const participantsMap = useMemo(() => {
+    const map: Record<string, ParticipantInfo> = {};
+    for (const p of participants) map[p.participantId] = p;
+    return map;
+  }, [participants]);
+
   if (!ready || !role) {
     return (
       <ScreenShell align="center" padding="0">
@@ -188,6 +194,7 @@ export default function RoomPage() {
     hostToken,
     participants,
     participantsById,
+    participantsMap,
     currentRound,
     totalScoreRanking,
     rankPointsRanking,
@@ -196,7 +203,7 @@ export default function RoomPage() {
   } as const;
 
   if (localView === "final" && finalResult) {
-    return <FinalRevealView finalResult={finalResult} />;
+    return <FinalRevealView finalResult={finalResult} participantsMap={participantsMap} />;
   }
 
   if (localView === "score" && currentRound && role === "host" && hostToken) {

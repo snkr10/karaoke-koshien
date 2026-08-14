@@ -1,10 +1,11 @@
 "use client";
 
 import { getSocket } from "@/lib/socket";
-import { LocalView, RoundInfo } from "@/lib/types";
+import { LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/PrimaryButton";
+import { Avatar } from "@/components/ui/Avatar";
 import { colors, fonts } from "@/lib/theme";
 
 interface Props {
@@ -12,12 +13,13 @@ interface Props {
   role: "host" | "participant";
   hostToken: string | null;
   participantsById: Record<string, string>;
+  participantsMap: Record<string, ParticipantInfo>;
   currentRound: RoundInfo;
   errorMessage: string | null;
   onNavigate: (v: LocalView) => void;
 }
 
-export function RoundAnnounceView({ roomCode, role, hostToken, participantsById, currentRound, errorMessage, onNavigate }: Props) {
+export function RoundAnnounceView({ roomCode, role, hostToken, participantsById, participantsMap, currentRound, errorMessage, onNavigate }: Props) {
   const handleReshuffle = () => {
     if (!hostToken) return;
     getSocket().emit("round:reshuffle_pairs", { roomCode, hostToken, roundId: currentRound.roundId });
@@ -31,7 +33,11 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
         <div style={{ fontFamily: fonts.heading, fontWeight: 400, fontSize: 11, letterSpacing: "0.25em", color: colors.creamDim40, textTransform: "uppercase" }}>
           ROUND
         </div>
-        <div style={{ fontFamily: fonts.heading, fontWeight: 900, fontSize: 56, letterSpacing: "-0.02em", color: colors.cream, lineHeight: 1 }}>
+        <div
+          key={currentRound.roundId}
+          className="kk-stamp-in"
+          style={{ fontFamily: fonts.heading, fontWeight: 900, fontSize: 56, letterSpacing: "-0.02em", color: colors.cream, lineHeight: 1 }}
+        >
           {String(currentRound.roundNumber).padStart(2, "0")}
         </div>
         <div
@@ -44,8 +50,14 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
             fontSize: 12,
             letterSpacing: "0.08em",
             color: colors.cream,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
+          <span className="kk-flag-wave" style={{ fontSize: 12 }}>
+            🚩
+          </span>
           {currentRound.mode === "team" ? "チーム戦（デュエット）" : "個人戦"}
         </div>
         <div style={{ fontFamily: fonts.body, fontSize: 11, color: colors.creamDim40, marginTop: 2 }}>
@@ -64,6 +76,7 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
                   {isTeam ? "チーム" : "ソロ"}
                 </div>
                 <div
+                  className="kk-stamp-in"
                   style={{
                     fontFamily: fonts.mono,
                     fontSize: 11,
@@ -72,12 +85,27 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
                     border: `1px solid ${colors.goldBorder}`,
                     borderRadius: 100,
                     padding: "2px 9px",
+                    animationDelay: `${idx * 60 + 120}ms`,
                   }}
                 >
                   {perf.order}番目に歌う
                 </div>
               </div>
-              <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 19, color: colors.cream }}>{names}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex" }}>
+                  {perf.memberIds.map((id, mi) => (
+                    <div key={id} style={{ marginLeft: mi === 0 ? 0 : -10 }}>
+                      <Avatar
+                        name={participantsMap[id]?.name ?? "?"}
+                        avatarType={participantsMap[id]?.avatarType}
+                        avatarValue={participantsMap[id]?.avatarValue}
+                        size={32}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 19, color: colors.cream }}>{names}</div>
+              </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                 <span
                   style={{
@@ -113,11 +141,8 @@ export function RoundAnnounceView({ roomCode, role, hostToken, participantsById,
           <PrimaryButton onClick={() => onNavigate("score")}>得点入力へ</PrimaryButton>
         </div>
       ) : (
-        <div
-          onClick={() => onNavigate("standings")}
-          style={{ marginTop: "auto", fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, textAlign: "center", textDecoration: "underline", cursor: "pointer" }}
-        >
-          順位表を見る
+        <div style={{ width: "100%", marginTop: "auto" }}>
+          <SecondaryButton onClick={() => onNavigate("standings")}>📊 順位表を見る</SecondaryButton>
         </div>
       )}
     </ScreenShell>

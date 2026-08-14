@@ -33,6 +33,8 @@ export async function broadcastParticipants(io: Server, roomCode: string, sessio
       participantId: p.id,
       name: p.name,
       active: p.active,
+      avatarType: p.avatarType,
+      avatarValue: p.avatarValue,
     })),
   });
 }
@@ -118,6 +120,8 @@ export async function buildStateFull(sessionId: string) {
       participantId: p.id,
       name: p.name,
       active: p.active,
+      avatarType: p.avatarType,
+      avatarValue: p.avatarValue,
     })),
     currentRound,
     totalScoreRanking: rankings.totalScoreRanking,

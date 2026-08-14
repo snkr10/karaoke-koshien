@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { createSession } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { saveHostRecord, setSessionRole } from "@/lib/storage";
+import { AvatarValue } from "@/lib/avatar";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { AvatarPicker } from "@/components/ui/AvatarPicker";
 import { colors, fonts } from "@/lib/theme";
 
 export default function HostCreatePage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState<AvatarValue | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +45,12 @@ export default function HostCreatePage() {
         router.replace(`/room/${roomCode}`);
       };
       socket.on("participant:joined", onJoined);
-      socket.emit("participant:join", { roomCode, name: name.trim() });
+      socket.emit("participant:join", {
+        roomCode,
+        name: name.trim(),
+        avatarType: avatar?.avatarType,
+        avatarValue: avatar?.avatarValue,
+      });
     } catch {
       setError("ルームの作成に失敗しました。時間をおいて再度お試しください。");
       setCreating(false);
@@ -93,6 +101,8 @@ export default function HostCreatePage() {
             }}
           />
         </div>
+
+        <AvatarPicker name={name} value={avatar} onChange={setAvatar} />
       </div>
 
       <PrimaryButton onClick={handleStart} disabled={!name.trim() || creating}>

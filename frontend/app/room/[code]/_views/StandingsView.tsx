@@ -23,6 +23,7 @@ interface Props {
   hostToken: string | null;
   participants: ParticipantInfo[];
   participantsById: Record<string, string>;
+  participantsMap: Record<string, ParticipantInfo>;
   currentRound: RoundInfo | null;
   totalScoreRanking: RankingRow[];
   rankPointsRanking: RankingRow[];
@@ -36,6 +37,7 @@ export function StandingsView({
   hostToken,
   participants,
   participantsById,
+  participantsMap,
   totalScoreRanking,
   rankPointsRanking,
   errorMessage,
@@ -92,6 +94,8 @@ export function StandingsView({
             display={row.display}
             isFirst={i === 0}
             index={i}
+            avatarType={participantsMap[row.participantId]?.avatarType}
+            avatarValue={participantsMap[row.participantId]?.avatarValue}
           />
         ))}
       </div>
@@ -109,11 +113,8 @@ export function StandingsView({
           <SecondaryButton onClick={handleFinalize}>最終発表へ（{tab === "total" ? "総得点" : "勝敗ポイント"}で決定）</SecondaryButton>
         </div>
       ) : (
-        <div
-          onClick={() => onNavigate("round")}
-          style={{ marginTop: "auto", fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, textAlign: "center", textDecoration: "underline", cursor: "pointer" }}
-        >
-          ペア発表に戻る
+        <div style={{ width: "100%", marginTop: "auto" }}>
+          <SecondaryButton onClick={() => onNavigate("round")}>🎤 ペア発表に戻る</SecondaryButton>
         </div>
       )}
     </ScreenShell>

@@ -5,8 +5,9 @@ import { getSocket } from "@/lib/socket";
 import { LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ScreenShell, ScreenHeader } from "@/components/ui/ScreenShell";
 import { Card } from "@/components/ui/Card";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { PrimaryButton, SecondaryButton } from "@/components/ui/PrimaryButton";
 import { QRCodeBox } from "@/components/ui/QRCode";
+import { Avatar } from "@/components/ui/Avatar";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { RoundMode, startRound, showStandingsForEveryone } from "@/lib/roundActions";
 import { colors, fonts } from "@/lib/theme";
@@ -85,24 +86,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
                   animationDelay: `${i * 50}ms`,
                 }}
               >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    background: "rgba(245,241,230,0.12)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: fonts.heading,
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: colors.cream,
-                    flexShrink: 0,
-                  }}
-                >
-                  {p.name.slice(0, 1)}
-                </div>
+                <Avatar name={p.name} avatarType={p.avatarType} avatarValue={p.avatarValue} size={34} />
                 <div style={{ flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.cream }}>{p.name}</div>
                 <div
                   onClick={() => handleRemove(p.participantId)}
@@ -128,15 +112,11 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
           </div>
         </div>
 
-        {currentRound && (
-          <div onClick={handleShowStandings} style={{ textAlign: "center", fontFamily: fonts.body, fontSize: 12, color: colors.creamDim60, cursor: "pointer", textDecoration: "underline" }}>
-            順位表を見る
-          </div>
-        )}
-
         {errorMessage && (
           <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.red, textAlign: "center" }}>{errorMessage}</div>
         )}
+
+        {currentRound && <SecondaryButton onClick={handleShowStandings}>📊 順位表を見る</SecondaryButton>}
 
         <ModeToggle value={mode} onChange={setMode} />
 
@@ -166,6 +146,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
                 borderBottom: i < activeParticipants.length - 1 ? "1px solid rgba(245,241,230,0.1)" : "none",
               }}
             >
+              <Avatar name={p.name} avatarType={p.avatarType} avatarValue={p.avatarValue} size={34} />
               <div style={{ flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.cream }}>{p.name}</div>
             </div>
           ))}
