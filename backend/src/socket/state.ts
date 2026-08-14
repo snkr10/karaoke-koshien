@@ -115,7 +115,7 @@ export async function buildStateFull(sessionId: string) {
   const rankings = await computeRankings(sessionId);
 
   return {
-    session: { status: session?.status ?? "waiting" },
+    session: { status: session?.status ?? "waiting", standingsVisible: session?.standingsVisible ?? true },
     participants: participants.map((p) => ({
       participantId: p.id,
       name: p.name,

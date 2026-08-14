@@ -138,7 +138,7 @@ export function FinalRevealView({
           pointerEvents: "none",
         }}
       />
-      <div className="kk-win-bounce-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative" }}>
+      <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span className="kk-flag-wave" style={{ fontSize: 20 }}>
             🚩

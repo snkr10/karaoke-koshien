@@ -12,3 +12,8 @@ export function startRound(roomCode: string, hostToken: string, mode: RoundMode 
 export function showStandingsForEveryone(roomCode: string, hostToken: string) {
   getSocket().emit("standings:show", { roomCode, hostToken });
 }
+
+// サプライズモード: 順位表を参加者に公開するかどうかをホストが切り替える
+export function setStandingsVisibility(roomCode: string, hostToken: string, visible: boolean) {
+  getSocket().emit("standings:set_visibility", { roomCode, hostToken, visible });
+}

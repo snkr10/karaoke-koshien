@@ -19,12 +19,13 @@ enum RoundMode {
 }
 
 model Session {
-  id         String        @id @default(uuid())
-  roomCode   String        @unique @map("room_code")
-  hostToken  String        @map("host_token")
-  status     SessionStatus @default(waiting)
-  createdAt  DateTime      @default(now()) @map("created_at")
-  expiresAt  DateTime      @map("expires_at")
+  id               String        @id @default(uuid())
+  roomCode         String        @unique @map("room_code")
+  hostToken        String        @map("host_token")
+  status           SessionStatus @default(waiting)
+  standingsVisible Boolean       @default(true) @map("standings_visible")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  expiresAt        DateTime      @map("expires_at")
 
   participants Participant[]
   rounds       Round[]

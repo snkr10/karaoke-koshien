@@ -7,7 +7,7 @@ import { PillTabs } from "@/components/ui/PillTabs";
 import { RankRow } from "@/components/ui/RankRow";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/PrimaryButton";
 import { ModeToggle } from "@/components/ui/ModeToggle";
-import { RoundMode, startRound } from "@/lib/roundActions";
+import { RoundMode, startRound, setStandingsVisibility } from "@/lib/roundActions";
 import { getSocket } from "@/lib/socket";
 import { colors, fonts } from "@/lib/theme";
 
@@ -21,12 +21,14 @@ interface Props {
   roomCode: string;
   role: "host" | "participant";
   hostToken: string | null;
+  selfParticipantId: string | null;
   participants: ParticipantInfo[];
   participantsById: Record<string, string>;
   participantsMap: Record<string, ParticipantInfo>;
   currentRound: RoundInfo | null;
   totalScoreRanking: RankingRow[];
   rankPointsRanking: RankingRow[];
+  standingsVisible: boolean;
   errorMessage: string | null;
   onNavigate: (v: LocalView) => void;
 }
@@ -35,11 +37,13 @@ export function StandingsView({
   roomCode,
   role,
   hostToken,
+  selfParticipantId,
   participants,
   participantsById,
   participantsMap,
   totalScoreRanking,
   rankPointsRanking,
+  standingsVisible,
   errorMessage,
   onNavigate,
 }: Props) {
@@ -51,6 +55,8 @@ export function StandingsView({
     tab === "total"
       ? totalScoreRanking.map((r) => ({ participantId: r.participantId, value: r.totalScore ?? 0, display: `${(r.totalScore ?? 0).toFixed(1)}点` }))
       : rankPointsRanking.map((r) => ({ participantId: r.participantId, value: r.rankPoints ?? 0, display: `${r.rankPoints ?? 0}P` }));
+
+  const ownRow = rows.find((r) => r.participantId === selfParticipantId);
 
   const handleNextRound = () => {
     if (!hostToken || starting) return;
@@ -67,6 +73,13 @@ export function StandingsView({
     getSocket().emit("session:finalize", { roomCode, hostToken, decisionMetric });
   };
 
+  const handleToggleVisibility = () => {
+    if (!hostToken) return;
+    setStandingsVisibility(roomCode, hostToken, !standingsVisible);
+  };
+
+  const canSeeFullRanking = standingsVisible;
+
   return (
     <ScreenShell padding="72px 24px 28px">
       <ScreenHeader kicker="STANDINGS" title="順位表" />
@@ -80,25 +93,51 @@ export function StandingsView({
         ]}
       />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {rows.length === 0 && (
-          <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim55, textAlign: "center", padding: 20 }}>
-            まだ結果がありません
+      {canSeeFullRanking ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {rows.length === 0 && (
+            <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim55, textAlign: "center", padding: 20 }}>
+              まだ結果がありません
+            </div>
+          )}
+          {rows.map((row, i) => (
+            <RankRow
+              key={row.participantId}
+              rank={i + 1}
+              name={participantsById[row.participantId] ?? "?"}
+              display={row.display}
+              isFirst={i === 0}
+              index={i}
+              avatarType={participantsMap[row.participantId]?.avatarType}
+              avatarValue={participantsMap[row.participantId]?.avatarValue}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="kk-pop-in"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            padding: "36px 20px",
+            background: colors.card,
+            borderRadius: 14,
+          }}
+        >
+          <div style={{ fontSize: 28 }}>🤫</div>
+          <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 15, color: colors.cream, textAlign: "center" }}>
+            順位は最終発表までのお楽しみ！
           </div>
-        )}
-        {rows.map((row, i) => (
-          <RankRow
-            key={row.participantId}
-            rank={i + 1}
-            name={participantsById[row.participantId] ?? "?"}
-            display={row.display}
-            isFirst={i === 0}
-            index={i}
-            avatarType={participantsMap[row.participantId]?.avatarType}
-            avatarValue={participantsMap[row.participantId]?.avatarValue}
-          />
-        ))}
-      </div>
+          {ownRow && (
+            <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim60, textAlign: "center", marginTop: 4 }}>
+              あなたの{tab === "total" ? "現在の得点" : "現在の勝敗ポイント"}：
+              <span style={{ fontFamily: fonts.mono, color: colors.gold, fontWeight: 700 }}> {ownRow.display}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {errorMessage && (
         <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.red, textAlign: "center" }}>{errorMessage}</div>
@@ -106,6 +145,49 @@ export function StandingsView({
 
       {role === "host" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
+          <div
+            onClick={handleToggleVisibility}
+            className="kk-pressable"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: colors.creamBg06,
+              border: `1px solid ${colors.creamBorder}`,
+              borderRadius: 10,
+              padding: "10px 14px",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim70 }}>
+              {standingsVisible ? "👀 参加者に順位を公開中" : "🤫 サプライズモード（参加者には非公開）"}
+            </span>
+            <div
+              style={{
+                width: 38,
+                height: 22,
+                borderRadius: 100,
+                background: standingsVisible ? colors.gold : "rgba(245,241,230,0.2)",
+                position: "relative",
+                flexShrink: 0,
+                transition: "background 0.15s ease",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  left: standingsVisible ? 18 : 2,
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  background: colors.bg,
+                  transition: "left 0.15s ease",
+                }}
+              />
+            </div>
+          </div>
+
           <ModeToggle value={mode} onChange={setMode} />
           <PrimaryButton onClick={handleNextRound} disabled={starting}>
             次のラウンドへ

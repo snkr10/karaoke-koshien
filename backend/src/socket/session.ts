@@ -71,6 +71,19 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
     }
   );
 
+  // サプライズモード: ホストが順位表の公開/非公開を切り替える
+  socket.on(
+    "standings:set_visibility",
+    async (payload: { roomCode: string; hostToken: string; visible: boolean }) => {
+      const { session, valid } = await assertHost(payload.roomCode, payload.hostToken);
+      if (!valid || !session) {
+        return emitError(socket, "INVALID_HOST_TOKEN", "ホスト権限が確認できませんでした");
+      }
+      await prisma.session.update({ where: { id: session.id }, data: { standingsVisible: payload.visible } });
+      io.to(session.roomCode).emit("standings:visibility_updated", { standingsVisible: payload.visible });
+    }
+  );
+
   socket.on(
     "session:sync_request",
     async (payload: { roomCode: string; participantId?: string }) => {

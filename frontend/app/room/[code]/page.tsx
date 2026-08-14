@@ -36,6 +36,7 @@ export default function RoomPage() {
   const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localView, setLocalView] = useState<LocalView>("participants");
+  const [standingsVisible, setStandingsVisible] = useState(true);
 
   // 自分がホストか参加者かを復元する。
   // hostToken/participantIdはlocalStorage（端末をまたいだ再接続用）に保存されているが、
@@ -87,7 +88,7 @@ export default function RoomPage() {
     };
 
     const onStateFull = (state: {
-      session: { status: string };
+      session: { status: string; standingsVisible?: boolean };
       participants: ParticipantInfo[];
       currentRound: RoundInfo | null;
       totalScoreRanking: RankingRow[];
@@ -97,6 +98,7 @@ export default function RoomPage() {
       setCurrentRound(state.currentRound);
       setTotalScoreRanking(state.totalScoreRanking);
       setRankPointsRanking(state.rankPointsRanking);
+      setStandingsVisible(state.session.standingsVisible ?? true);
       if (state.currentRound) setLocalView((prev) => (prev === "participants" ? "round" : prev));
     };
 
@@ -141,6 +143,11 @@ export default function RoomPage() {
       setLocalView((prev) => (prev === "final" ? prev : "standings"));
     };
 
+    // サプライズモード: ホストが順位表の公開/非公開を切り替えたら全員に反映
+    const onStandingsVisibility = (payload: { standingsVisible: boolean }) => {
+      setStandingsVisible(payload.standingsVisible);
+    };
+
     socket.on("connect", requestSync);
     socket.on("session:state_full", onStateFull);
     socket.on("session:state", onState);
@@ -149,6 +156,7 @@ export default function RoomPage() {
     socket.on("ranking:updated", onRankingUpdated);
     socket.on("session:final_result", onFinalResult);
     socket.on("standings:show", onStandingsShow);
+    socket.on("standings:visibility_updated", onStandingsVisibility);
     socket.on("error", onError);
 
     if (socket.connected) requestSync();
@@ -162,6 +170,7 @@ export default function RoomPage() {
       socket.off("ranking:updated", onRankingUpdated);
       socket.off("session:final_result", onFinalResult);
       socket.off("standings:show", onStandingsShow);
+      socket.off("standings:visibility_updated", onStandingsVisibility);
       socket.off("error", onError);
     };
   }, [ready, roomCode, selfParticipantId]);
@@ -192,12 +201,14 @@ export default function RoomPage() {
     roomCode,
     role,
     hostToken,
+    selfParticipantId,
     participants,
     participantsById,
     participantsMap,
     currentRound,
     totalScoreRanking,
     rankPointsRanking,
+    standingsVisible,
     errorMessage,
     onNavigate: setLocalView,
   } as const;
