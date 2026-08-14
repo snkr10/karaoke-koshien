@@ -109,6 +109,39 @@ export async function serializeRoundStarted(sessionId: string) {
   };
 }
 
+export type DecisionMetric = "total_score" | "rank_points" | "composite";
+
+// 最終発表で使う「誰が優勝か・最終順位一覧」を、指定の指標で算出する。
+// finalizeの瞬間だけでなく、finalMetricを保存しておけば再接続時にも同じ結果を再現できる
+export async function computeFinalResult(sessionId: string, metric: DecisionMetric) {
+  const [rankings, participants] = await Promise.all([
+    computeRankings(sessionId),
+    prisma.participant.findMany({ where: { sessionId } }),
+  ]);
+  const ranking =
+    metric === "total_score"
+      ? rankings.totalScoreRanking
+      : metric === "rank_points"
+        ? rankings.rankPointsRanking
+        : rankings.compositeRanking;
+  const valueKey = metric === "total_score" ? "totalScore" : metric === "rank_points" ? "rankPoints" : "composite";
+
+  const participantsById = new Map(participants.map((p) => [p.id, p.name]));
+  const sortedRanking = [...ranking].sort((a: any, b: any) => b[valueKey] - a[valueKey]);
+
+  const finalRanking = sortedRanking.map((r: any) => ({
+    participantId: r.participantId,
+    name: participantsById.get(r.participantId) ?? "",
+    value: r[valueKey],
+  }));
+
+  return {
+    metric,
+    winnerParticipantId: finalRanking[0]?.participantId ?? null,
+    ranking: finalRanking,
+  };
+}
+
 export async function buildStateFull(sessionId: string) {
   const session = await prisma.session.findUnique({ where: { id: sessionId } });
   const participants = await prisma.participant.findMany({
@@ -117,6 +150,10 @@ export async function buildStateFull(sessionId: string) {
   });
   const currentRound = await serializeRoundStarted(sessionId);
   const rankings = await computeRankings(sessionId);
+  const finalResult =
+    session?.status === "finished" && session.finalMetric
+      ? await computeFinalResult(sessionId, session.finalMetric as DecisionMetric)
+      : null;
 
   return {
     session: { status: session?.status ?? "waiting", standingsVisible: session?.standingsVisible ?? true },
@@ -131,5 +168,6 @@ export async function buildStateFull(sessionId: string) {
     totalScoreRanking: rankings.totalScoreRanking,
     rankPointsRanking: rankings.rankPointsRanking,
     compositeRanking: rankings.compositeRanking,
+    finalResult,
   };
 }

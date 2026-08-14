@@ -24,6 +24,7 @@ model Session {
   hostToken        String        @map("host_token")
   status           SessionStatus @default(waiting)
   standingsVisible Boolean       @default(false) @map("standings_visible")
+  finalMetric      String?       @map("final_metric") // "total_score" | "rank_points" | "composite"
   createdAt        DateTime      @default(now()) @map("created_at")
   expiresAt        DateTime      @map("expires_at")
 

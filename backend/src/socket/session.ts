@@ -2,7 +2,7 @@ import { Server, Socket } from "socket.io";
 import { prisma } from "../db";
 import { generateRoomCode } from "../lib/roomCode";
 import { generateHostToken } from "../lib/hostToken";
-import { assertHost, buildStateFull, emitError, getSessionByRoomCode } from "./state";
+import { assertHost, buildStateFull, computeFinalResult, emitError, getSessionByRoomCode } from "./state";
 
 const SESSION_TTL_HOURS = 24;
 
@@ -37,34 +37,14 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
         return emitError(socket, "INVALID_HOST_TOKEN", "ホスト権限が確認できませんでした");
       }
 
-      await prisma.session.update({ where: { id: session.id }, data: { status: "finished" } });
-
-      const state = await buildStateFull(session.id);
       const metric = payload.decisionMetric;
-      const ranking =
-        metric === "total_score"
-          ? state.totalScoreRanking
-          : metric === "rank_points"
-            ? state.rankPointsRanking
-            : state.compositeRanking;
-      const valueKey = metric === "total_score" ? "totalScore" : metric === "rank_points" ? "rankPoints" : "composite";
-
-      const participantsById = new Map(state.participants.map((p) => [p.participantId, p.name]));
-      const sortedRanking = [...ranking].sort(
-        (a: any, b: any) => b[valueKey] - a[valueKey]
-      );
-
-      const finalRanking = sortedRanking.map((r: any) => ({
-        participantId: r.participantId,
-        name: participantsById.get(r.participantId) ?? "",
-        value: r[valueKey],
-      }));
-
-      io.to(session.roomCode).emit("session:final_result", {
-        metric,
-        winnerParticipantId: finalRanking[0]?.participantId ?? null,
-        ranking: finalRanking,
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { status: "finished", finalMetric: metric },
       });
+
+      const finalResult = await computeFinalResult(session.id, metric);
+      io.to(session.roomCode).emit("session:final_result", finalResult);
     }
   );
 
@@ -106,7 +86,7 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
       await prisma.round.deleteMany({ where: { sessionId: session.id } });
       await prisma.session.update({
         where: { id: session.id },
-        data: { status: "waiting", standingsVisible: false },
+        data: { status: "waiting", standingsVisible: false, finalMetric: null },
       });
 
       const state = await buildStateFull(session.id);

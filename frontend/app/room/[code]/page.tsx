@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socket";
 import { getHostRecord, getParticipantRecord, getSessionRole, setSessionRole } from "@/lib/storage";
+import { useWakeLock } from "@/lib/useWakeLock";
 import { FinalResult, LocalView, ParticipantInfo, RoundInfo } from "@/lib/types";
 import { ParticipantsView } from "./_views/ParticipantsView";
 import { RoundAnnounceView } from "./_views/RoundAnnounceView";
@@ -24,6 +25,8 @@ export default function RoomPage() {
   const params = useParams<{ code: string }>();
   const roomCode = (params.code as string).toUpperCase();
   const router = useRouter();
+
+  useWakeLock();
 
   const [ready, setReady] = useState(false);
   const [role, setRole] = useState<"host" | "participant" | null>(null);
@@ -96,6 +99,7 @@ export default function RoomPage() {
       totalScoreRanking: RankingRow[];
       rankPointsRanking: RankingRow[];
       compositeRanking: RankingRow[];
+      finalResult: FinalResult | null;
     }) => {
       setParticipants(state.participants);
       setCurrentRound(state.currentRound);
@@ -103,7 +107,13 @@ export default function RoomPage() {
       setRankPointsRanking(state.rankPointsRanking);
       setCompositeRanking(state.compositeRanking);
       setStandingsVisible(state.session.standingsVisible ?? true);
-      if (state.currentRound) setLocalView((prev) => (prev === "participants" ? "round" : prev));
+      if (state.finalResult) {
+        // 最終発表が既に確定済みのセッションに再接続した場合、結果をそのまま復元する
+        setFinalResult(state.finalResult);
+        setLocalView("final");
+      } else if (state.currentRound) {
+        setLocalView((prev) => (prev === "participants" ? "round" : prev));
+      }
     };
 
     const onState = (payload: { participants: ParticipantInfo[] }) => {
