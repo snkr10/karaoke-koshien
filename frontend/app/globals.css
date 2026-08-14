@@ -289,3 +289,34 @@ button {
 .kk-gold-pulse {
   animation: goldGlow 2.2s ease-in-out infinite;
 }
+
+@keyframes barTense {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 199, 44, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 199, 44, 0.9), 0 0 28px rgba(255, 199, 44, 0.5);
+  }
+}
+
+.kk-bar-tense {
+  animation: barTense 0.35s ease-in-out infinite;
+}
+
+@keyframes barRowShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.kk-bar-row-shake {
+  animation: barRowShake 0.25s ease-in-out infinite;
+}
