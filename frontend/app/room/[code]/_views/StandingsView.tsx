@@ -63,12 +63,13 @@ export function StandingsView({
 
   const ownRow = rows.find((r) => r.participantId === selfParticipantId);
 
+  const activeCount = participants.filter((p) => p.active).length;
+
   const handleNextRound = () => {
     if (!hostToken || starting) return;
-    const activeCount = participants.filter((p) => p.active).length;
     if (activeCount < 2) return;
     setStarting(true);
-    startRound(roomCode, hostToken, mode);
+    startRound(roomCode, hostToken, mode, activeCount);
     setTimeout(() => setStarting(false), 1500);
   };
 
@@ -196,7 +197,7 @@ export function StandingsView({
             </div>
           </div>
 
-          <ModeToggle value={mode} onChange={setMode} />
+          <ModeToggle value={mode} onChange={setMode} allowTeam={activeCount !== 2} />
           <PrimaryButton onClick={handleNextRound} disabled={starting}>
             次のラウンドへ
           </PrimaryButton>

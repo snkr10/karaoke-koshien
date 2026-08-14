@@ -93,6 +93,27 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
     }
   );
 
+  // 再戦: ラウンド・得点履歴をすべて削除し、参加者はそのままにセッションを待機状態に戻す
+  socket.on(
+    "session:restart",
+    async (payload: { roomCode: string; hostToken: string }) => {
+      const { session, valid } = await assertHost(payload.roomCode, payload.hostToken);
+      if (!valid || !session) {
+        return emitError(socket, "INVALID_HOST_TOKEN", "ホスト権限が確認できませんでした");
+      }
+
+      // Round削除でPerformance/PerformanceMemberもカスケード削除される
+      await prisma.round.deleteMany({ where: { sessionId: session.id } });
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { status: "waiting", standingsVisible: false },
+      });
+
+      const state = await buildStateFull(session.id);
+      io.to(session.roomCode).emit("session:restarted", state);
+    }
+  );
+
   socket.on(
     "session:sync_request",
     async (payload: { roomCode: string; participantId?: string }) => {

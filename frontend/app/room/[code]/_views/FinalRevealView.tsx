@@ -6,6 +6,8 @@ import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Confetti } from "@/components/ui/Confetti";
 import { Avatar } from "@/components/ui/Avatar";
 import { BarRace } from "@/components/ui/BarRace";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { restartSession } from "@/lib/roundActions";
 import { colors, fonts } from "@/lib/theme";
 
 const WAIT_MS = 2800;
@@ -15,9 +17,15 @@ const FLASH_MS = 350;
 export function FinalRevealView({
   finalResult,
   participantsMap,
+  role,
+  roomCode,
+  hostToken,
 }: {
   finalResult: FinalResult;
   participantsMap: Record<string, ParticipantInfo>;
+  role: "host" | "participant";
+  roomCode: string;
+  hostToken: string | null;
 }) {
   const [revealed, setRevealed] = useState(false);
   const [tense, setTense] = useState(false);
@@ -133,23 +141,6 @@ export function FinalRevealView({
           }}
         />
       )}
-      {raceDone && (
-        <div
-          className="kk-spotlight-sweep"
-          style={{
-            position: "fixed",
-            top: "10%",
-            left: "50%",
-            width: 500,
-            height: 500,
-            marginLeft: -250,
-            background:
-              "conic-gradient(from 0deg, transparent 0deg, rgba(255,199,44,0.16) 20deg, transparent 60deg, transparent 180deg, rgba(255,199,44,0.12) 210deg, transparent 250deg, transparent 360deg)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       <div
         style={{
           fontFamily: fonts.heading,
@@ -209,6 +200,12 @@ export function FinalRevealView({
             {winner.name}
           </div>
           <div style={{ fontFamily: fonts.mono, fontSize: 15, color: colors.gold }}>{format(winner.value)}</div>
+        </div>
+      )}
+
+      {raceDone && role === "host" && hostToken && (
+        <div className="kk-pop-in" style={{ width: "100%", marginTop: 40, position: "relative" }}>
+          <PrimaryButton onClick={() => restartSession(roomCode, hostToken)}>🔄 もう一度対戦する</PrimaryButton>
         </div>
       )}
     </ScreenShell>

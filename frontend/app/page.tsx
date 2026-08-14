@@ -25,8 +25,10 @@ export default function LandingPage() {
         <div style={{ fontFamily: fonts.heading, fontWeight: 900, fontSize: 34, color: colors.cream, textAlign: "center" }}>
           カラオケ甲子園
         </div>
-        <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim55, textAlign: "center", marginTop: 4 }}>
-          友人・家族対抗のカラオケ勝負をリアルタイムに記録・演出
+        <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim55, textAlign: "center", marginTop: 4, lineHeight: 1.6 }}>
+          友人・家族対抗のカラオケ勝負を
+          <br />
+          リアルタイムに記録・演出
         </div>
       </div>
 

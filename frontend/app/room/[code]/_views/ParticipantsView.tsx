@@ -37,7 +37,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
   const handleStart = () => {
     if (!hostToken || activeParticipants.length < 2 || starting) return;
     setStarting(true);
-    startRound(roomCode, hostToken, mode);
+    startRound(roomCode, hostToken, mode, activeParticipants.length);
     setTimeout(() => setStarting(false), 1500);
   };
 
@@ -118,7 +118,7 @@ export function ParticipantsView({ roomCode, role, hostToken, participants, curr
 
         {currentRound && <SecondaryButton onClick={handleShowStandings}>📊 順位表を見る</SecondaryButton>}
 
-        <ModeToggle value={mode} onChange={setMode} />
+        <ModeToggle value={mode} onChange={setMode} allowTeam={activeParticipants.length !== 2} />
 
         <PrimaryButton onClick={handleStart} disabled={activeParticipants.length < 2 || starting}>
           ラウンドを開始する

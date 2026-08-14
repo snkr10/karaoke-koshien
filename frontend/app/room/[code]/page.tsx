@@ -38,7 +38,7 @@ export default function RoomPage() {
   const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localView, setLocalView] = useState<LocalView>("participants");
-  const [standingsVisible, setStandingsVisible] = useState(true);
+  const [standingsVisible, setStandingsVisible] = useState(false);
 
   // 自分がホストか参加者かを復元する。
   // hostToken/participantIdはlocalStorage（端末をまたいだ再接続用）に保存されているが、
@@ -157,6 +157,25 @@ export default function RoomPage() {
       setStandingsVisible(payload.standingsVisible);
     };
 
+    // 再戦: ラウンド履歴がリセットされたので、全員を参加者管理画面まで巻き戻す
+    const onRestarted = (state: {
+      session: { status: string; standingsVisible?: boolean };
+      participants: ParticipantInfo[];
+      currentRound: RoundInfo | null;
+      totalScoreRanking: RankingRow[];
+      rankPointsRanking: RankingRow[];
+      compositeRanking: RankingRow[];
+    }) => {
+      setParticipants(state.participants);
+      setCurrentRound(null);
+      setTotalScoreRanking([]);
+      setRankPointsRanking([]);
+      setCompositeRanking([]);
+      setStandingsVisible(state.session.standingsVisible ?? false);
+      setFinalResult(null);
+      setLocalView("participants");
+    };
+
     socket.on("connect", requestSync);
     socket.on("session:state_full", onStateFull);
     socket.on("session:state", onState);
@@ -166,6 +185,7 @@ export default function RoomPage() {
     socket.on("session:final_result", onFinalResult);
     socket.on("standings:show", onStandingsShow);
     socket.on("standings:visibility_updated", onStandingsVisibility);
+    socket.on("session:restarted", onRestarted);
     socket.on("error", onError);
 
     if (socket.connected) requestSync();
@@ -180,6 +200,7 @@ export default function RoomPage() {
       socket.off("session:final_result", onFinalResult);
       socket.off("standings:show", onStandingsShow);
       socket.off("standings:visibility_updated", onStandingsVisibility);
+      socket.off("session:restarted", onRestarted);
       socket.off("error", onError);
     };
   }, [ready, roomCode, selfParticipantId]);
@@ -224,7 +245,15 @@ export default function RoomPage() {
   } as const;
 
   if (localView === "final" && finalResult) {
-    return <FinalRevealView finalResult={finalResult} participantsMap={participantsMap} />;
+    return (
+      <FinalRevealView
+        finalResult={finalResult}
+        participantsMap={participantsMap}
+        role={role}
+        roomCode={roomCode}
+        hostToken={hostToken}
+      />
+    );
   }
 
   if (localView === "score" && currentRound && role === "host" && hostToken) {

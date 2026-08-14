@@ -87,7 +87,7 @@ export default function HostCreatePage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder='たとえば「たくみ」'
+            placeholder='たとえば「たんたん」'
             style={{
               background: colors.creamBg06,
               border: `1px solid ${colors.creamBorder}`,
