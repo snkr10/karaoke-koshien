@@ -15,6 +15,7 @@ interface RankingRow {
   participantId: string;
   totalScore?: number;
   rankPoints?: number;
+  composite?: number;
 }
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
   currentRound: RoundInfo | null;
   totalScoreRanking: RankingRow[];
   rankPointsRanking: RankingRow[];
+  compositeRanking: RankingRow[];
   standingsVisible: boolean;
   errorMessage: string | null;
   onNavigate: (v: LocalView) => void;
@@ -43,18 +45,21 @@ export function StandingsView({
   participantsMap,
   totalScoreRanking,
   rankPointsRanking,
+  compositeRanking,
   standingsVisible,
   errorMessage,
   onNavigate,
 }: Props) {
-  const [tab, setTab] = useState<"total" | "points">("total");
+  const [tab, setTab] = useState<"total" | "points" | "composite">("composite");
   const [starting, setStarting] = useState(false);
   const [mode, setMode] = useState<RoundMode | null>(null);
 
   const rows =
     tab === "total"
       ? totalScoreRanking.map((r) => ({ participantId: r.participantId, value: r.totalScore ?? 0, display: `${(r.totalScore ?? 0).toFixed(1)}点` }))
-      : rankPointsRanking.map((r) => ({ participantId: r.participantId, value: r.rankPoints ?? 0, display: `${r.rankPoints ?? 0}P` }));
+      : tab === "points"
+        ? rankPointsRanking.map((r) => ({ participantId: r.participantId, value: r.rankPoints ?? 0, display: `${r.rankPoints ?? 0}P` }))
+        : compositeRanking.map((r) => ({ participantId: r.participantId, value: r.composite ?? 0, display: `${(r.composite ?? 0).toFixed(1)}` }));
 
   const ownRow = rows.find((r) => r.participantId === selfParticipantId);
 
@@ -67,9 +72,11 @@ export function StandingsView({
     setTimeout(() => setStarting(false), 1500);
   };
 
+  const decisionMetric = tab === "total" ? "total_score" : tab === "points" ? "rank_points" : "composite";
+  const metricLabel = tab === "total" ? "総得点" : tab === "points" ? "勝敗ポイント" : "総合力";
+
   const handleFinalize = () => {
     if (!hostToken) return;
-    const decisionMetric = tab === "total" ? "total_score" : "rank_points";
     getSocket().emit("session:finalize", { roomCode, hostToken, decisionMetric });
   };
 
@@ -86,8 +93,9 @@ export function StandingsView({
 
       <PillTabs
         value={tab}
-        onChange={(v) => setTab(v as "total" | "points")}
+        onChange={(v) => setTab(v as "total" | "points" | "composite")}
         options={[
+          { value: "composite", label: "総合力" },
           { value: "total", label: "総得点" },
           { value: "points", label: "勝敗ポイント" },
         ]}
@@ -132,7 +140,7 @@ export function StandingsView({
           </div>
           {ownRow && (
             <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.creamDim60, textAlign: "center", marginTop: 4 }}>
-              あなたの{tab === "total" ? "現在の得点" : "現在の勝敗ポイント"}：
+              あなたの現在の{metricLabel}：
               <span style={{ fontFamily: fonts.mono, color: colors.gold, fontWeight: 700 }}> {ownRow.display}</span>
             </div>
           )}
@@ -192,7 +200,7 @@ export function StandingsView({
           <PrimaryButton onClick={handleNextRound} disabled={starting}>
             次のラウンドへ
           </PrimaryButton>
-          <SecondaryButton onClick={handleFinalize}>最終発表へ（{tab === "total" ? "総得点" : "勝敗ポイント"}で決定）</SecondaryButton>
+          <SecondaryButton onClick={handleFinalize}>最終発表へ（{metricLabel}で決定）</SecondaryButton>
         </div>
       ) : (
         <div style={{ width: "100%", marginTop: "auto" }}>

@@ -17,6 +17,7 @@ interface RankingRow {
   participantId: string;
   totalScore?: number;
   rankPoints?: number;
+  composite?: number;
 }
 
 export default function RoomPage() {
@@ -33,6 +34,7 @@ export default function RoomPage() {
   const [currentRound, setCurrentRound] = useState<RoundInfo | null>(null);
   const [totalScoreRanking, setTotalScoreRanking] = useState<RankingRow[]>([]);
   const [rankPointsRanking, setRankPointsRanking] = useState<RankingRow[]>([]);
+  const [compositeRanking, setCompositeRanking] = useState<RankingRow[]>([]);
   const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localView, setLocalView] = useState<LocalView>("participants");
@@ -93,11 +95,13 @@ export default function RoomPage() {
       currentRound: RoundInfo | null;
       totalScoreRanking: RankingRow[];
       rankPointsRanking: RankingRow[];
+      compositeRanking: RankingRow[];
     }) => {
       setParticipants(state.participants);
       setCurrentRound(state.currentRound);
       setTotalScoreRanking(state.totalScoreRanking);
       setRankPointsRanking(state.rankPointsRanking);
+      setCompositeRanking(state.compositeRanking);
       setStandingsVisible(state.session.standingsVisible ?? true);
       if (state.currentRound) setLocalView((prev) => (prev === "participants" ? "round" : prev));
     };
@@ -123,9 +127,14 @@ export default function RoomPage() {
       });
     };
 
-    const onRankingUpdated = (payload: { totalScoreRanking: RankingRow[]; rankPointsRanking: RankingRow[] }) => {
+    const onRankingUpdated = (payload: {
+      totalScoreRanking: RankingRow[];
+      rankPointsRanking: RankingRow[];
+      compositeRanking: RankingRow[];
+    }) => {
       setTotalScoreRanking(payload.totalScoreRanking);
       setRankPointsRanking(payload.rankPointsRanking);
+      setCompositeRanking(payload.compositeRanking);
     };
 
     const onFinalResult = (payload: FinalResult) => {
@@ -208,6 +217,7 @@ export default function RoomPage() {
     currentRound,
     totalScoreRanking,
     rankPointsRanking,
+    compositeRanking,
     standingsVisible,
     errorMessage,
     onNavigate: setLocalView,

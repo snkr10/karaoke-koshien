@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
 import { prisma } from "../db";
-import { aggregateByParticipant } from "../lib/ranking";
+import { aggregateByParticipant, aggregateComposite } from "../lib/ranking";
 
 export function emitError(
   socket: { emit: (event: string, payload: unknown) => void },
@@ -70,7 +70,11 @@ export async function computeRankings(sessionId: string) {
     participantId: r.participantId,
     rankPoints: r.value,
   }));
-  return { totalScoreRanking, rankPointsRanking };
+  const compositeRanking = aggregateComposite(rows).map((r) => ({
+    participantId: r.participantId,
+    composite: r.value,
+  }));
+  return { totalScoreRanking, rankPointsRanking, compositeRanking };
 }
 
 export async function broadcastRankings(io: Server, roomCode: string, sessionId: string) {
@@ -126,5 +130,6 @@ export async function buildStateFull(sessionId: string) {
     currentRound,
     totalScoreRanking: rankings.totalScoreRanking,
     rankPointsRanking: rankings.rankPointsRanking,
+    compositeRanking: rankings.compositeRanking,
   };
 }

@@ -33,7 +33,12 @@ export function FinalRevealView({
     };
   }, []);
 
-  const format = (value: number) => (finalResult.metric === "total_score" ? `${value.toFixed(1)}点` : `${value}P`);
+  const format = (value: number) =>
+    finalResult.metric === "total_score"
+      ? `${value.toFixed(1)}点`
+      : finalResult.metric === "rank_points"
+        ? `${value}P`
+        : value.toFixed(1);
   const winner = finalResult.ranking[0];
 
   if (!revealed) {

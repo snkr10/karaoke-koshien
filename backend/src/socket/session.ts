@@ -27,7 +27,11 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
 
   socket.on(
     "session:finalize",
-    async (payload: { roomCode: string; hostToken: string; decisionMetric: "total_score" | "rank_points" }) => {
+    async (payload: {
+      roomCode: string;
+      hostToken: string;
+      decisionMetric: "total_score" | "rank_points" | "composite";
+    }) => {
       const { session, valid } = await assertHost(payload.roomCode, payload.hostToken);
       if (!valid || !session) {
         return emitError(socket, "INVALID_HOST_TOKEN", "ホスト権限が確認できませんでした");
@@ -37,8 +41,13 @@ export function registerSessionHandlers(io: Server, socket: Socket) {
 
       const state = await buildStateFull(session.id);
       const metric = payload.decisionMetric;
-      const ranking = metric === "total_score" ? state.totalScoreRanking : state.rankPointsRanking;
-      const valueKey = metric === "total_score" ? "totalScore" : "rankPoints";
+      const ranking =
+        metric === "total_score"
+          ? state.totalScoreRanking
+          : metric === "rank_points"
+            ? state.rankPointsRanking
+            : state.compositeRanking;
+      const valueKey = metric === "total_score" ? "totalScore" : metric === "rank_points" ? "rankPoints" : "composite";
 
       const participantsById = new Map(state.participants.map((p) => [p.participantId, p.name]));
       const sortedRanking = [...ranking].sort(

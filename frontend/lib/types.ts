@@ -29,7 +29,7 @@ export interface RankingEntry {
 }
 
 export interface FinalResult {
-  metric: "total_score" | "rank_points";
+  metric: "total_score" | "rank_points" | "composite";
   winnerParticipantId: string | null;
   ranking: { participantId: string; name: string; value: number }[];
 }

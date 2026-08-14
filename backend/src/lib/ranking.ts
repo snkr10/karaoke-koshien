@@ -53,3 +53,34 @@ export function aggregateByParticipant(
     .map(([participantId, value]) => ({ participantId, value }))
     .sort((a, b) => b.value - a.value);
 }
+
+// 総合力スコア = 勝敗ポイント合計 × COMPOSITE_RANK_POINT_WEIGHT + 平均得点
+// 勝敗ポイントを主軸にしつつ、平均得点で拮抗させる独自のブレンド指標
+// （合計ではなく平均を使うことで、出場回数や1回の高得点だけで差が開きすぎないようにする）
+export const COMPOSITE_RANK_POINT_WEIGHT = 5;
+
+export function aggregateComposite(rows: PerformanceMembershipRow[]): ParticipantRankingEntry[] {
+  const rankPointTotals = new Map<string, number>();
+  const scoreTotals = new Map<string, number>();
+  const scoreCounts = new Map<string, number>();
+
+  for (const row of rows) {
+    if (row.rankPoints !== null) {
+      rankPointTotals.set(row.participantId, (rankPointTotals.get(row.participantId) ?? 0) + row.rankPoints);
+    }
+    if (row.rawScore !== null) {
+      scoreTotals.set(row.participantId, (scoreTotals.get(row.participantId) ?? 0) + row.rawScore);
+      scoreCounts.set(row.participantId, (scoreCounts.get(row.participantId) ?? 0) + 1);
+    }
+  }
+
+  const participantIds = new Set([...rankPointTotals.keys(), ...scoreTotals.keys()]);
+  return Array.from(participantIds)
+    .map((participantId) => {
+      const rankPoints = rankPointTotals.get(participantId) ?? 0;
+      const count = scoreCounts.get(participantId) ?? 0;
+      const averageScore = count > 0 ? (scoreTotals.get(participantId) ?? 0) / count : 0;
+      return { participantId, value: rankPoints * COMPOSITE_RANK_POINT_WEIGHT + averageScore };
+    })
+    .sort((a, b) => b.value - a.value);
+}
