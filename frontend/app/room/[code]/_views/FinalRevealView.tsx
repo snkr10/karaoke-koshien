@@ -5,6 +5,7 @@ import { FinalResult, ParticipantInfo } from "@/lib/types";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { Confetti } from "@/components/ui/Confetti";
 import { Avatar } from "@/components/ui/Avatar";
+import { BarRace } from "@/components/ui/BarRace";
 import { colors, fonts } from "@/lib/theme";
 
 const WAIT_MS = 2800;
@@ -21,6 +22,7 @@ export function FinalRevealView({
   const [revealed, setRevealed] = useState(false);
   const [tense, setTense] = useState(false);
   const [flashing, setFlashing] = useState(false);
+  const [raceDone, setRaceDone] = useState(false);
 
   useEffect(() => {
     const tensionTimer = setTimeout(() => setTense(true), TENSION_MS);
@@ -119,126 +121,96 @@ export function FinalRevealView({
   }
 
   return (
-    <ScreenShell padding="96px 26px 40px" align="center">
-      <Confetti />
+    <ScreenShell padding="80px 26px 40px" align="center">
+      {raceDone && <Confetti />}
+      {raceDone && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "radial-gradient(circle at 50% 38%, rgba(255,199,44,0.16), transparent 60%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {raceDone && (
+        <div
+          className="kk-spotlight-sweep"
+          style={{
+            position: "fixed",
+            top: "10%",
+            left: "50%",
+            width: 500,
+            height: 500,
+            marginLeft: -250,
+            background:
+              "conic-gradient(from 0deg, transparent 0deg, rgba(255,199,44,0.16) 20deg, transparent 60deg, transparent 180deg, rgba(255,199,44,0.12) 210deg, transparent 250deg, transparent 360deg)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
       <div
         style={{
-          position: "fixed",
-          inset: 0,
-          background: "radial-gradient(circle at 50% 38%, rgba(255,199,44,0.16), transparent 60%)",
-          pointerEvents: "none",
+          fontFamily: fonts.heading,
+          fontWeight: 400,
+          fontSize: 11,
+          letterSpacing: "0.3em",
+          color: colors.creamDim40,
+          textTransform: "uppercase",
         }}
-      />
-      <div
-        className="kk-spotlight-sweep"
-        style={{
-          position: "fixed",
-          top: "10%",
-          left: "50%",
-          width: 500,
-          height: 500,
-          marginLeft: -250,
-          background:
-            "conic-gradient(from 0deg, transparent 0deg, rgba(255,199,44,0.16) 20deg, transparent 60deg, transparent 180deg, rgba(255,199,44,0.12) 210deg, transparent 250deg, transparent 360deg)",
-          pointerEvents: "none",
-        }}
-      />
-      <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="kk-flag-wave" style={{ fontSize: 20 }}>
-            🚩
-          </span>
-          <div
-            style={{
-              fontFamily: fonts.heading,
-              fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: "0.3em",
-              color: colors.gold,
-              textShadow: "0 0 14px rgba(255,199,44,0.6)",
-            }}
-          >
-            優勝
+      >
+        FINAL RESULT
+      </div>
+
+      <div style={{ width: "100%", marginTop: 24 }}>
+        <BarRace entries={finalResult.ranking.map((r) => ({ ...r, ...participantsMap[r.participantId] }))} format={format} onComplete={() => setRaceDone(true)} />
+      </div>
+
+      {raceDone && winner && (
+        <div className="kk-pop-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, position: "relative", marginTop: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="kk-flag-wave" style={{ fontSize: 20 }}>
+              🚩
+            </span>
+            <div
+              style={{
+                fontFamily: fonts.heading,
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: "0.3em",
+                color: colors.gold,
+                textShadow: "0 0 14px rgba(255,199,44,0.6)",
+              }}
+            >
+              優勝
+            </div>
+            <span className="kk-flag-wave" style={{ fontSize: 20, display: "inline-block", transform: "scaleX(-1)" }}>
+              🚩
+            </span>
           </div>
-          <span className="kk-flag-wave" style={{ fontSize: 20, display: "inline-block", transform: "scaleX(-1)" }}>
-            🚩
-          </span>
-        </div>
-        {winner && (
           <Avatar
             name={winner.name}
             avatarType={participantsMap[winner.participantId]?.avatarType}
             avatarValue={participantsMap[winner.participantId]?.avatarValue}
             size={72}
           />
-        )}
-        <div
-          className="kk-gold-pulse"
-          style={{
-            fontFamily: fonts.heading,
-            fontWeight: 900,
-            fontSize: 44,
-            letterSpacing: "-0.02em",
-            color: colors.gold,
-            textAlign: "center",
-          }}
-        >
-          {winner?.name ?? ""}
-        </div>
-        {winner && (
+          <div
+            className="kk-gold-pulse"
+            style={{
+              fontFamily: fonts.heading,
+              fontWeight: 900,
+              fontSize: 44,
+              letterSpacing: "-0.02em",
+              color: colors.gold,
+              textAlign: "center",
+            }}
+          >
+            {winner.name}
+          </div>
           <div style={{ fontFamily: fonts.mono, fontSize: 15, color: colors.gold }}>{format(winner.value)}</div>
-        )}
-      </div>
-
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8, marginTop: 8, position: "relative" }}>
-        <div
-          style={{
-            fontFamily: fonts.heading,
-            fontSize: 11,
-            letterSpacing: "0.15em",
-            color: colors.creamDim40,
-            textAlign: "center",
-            marginBottom: 6,
-          }}
-        >
-          FINAL RANKING
         </div>
-        {finalResult.ranking.map((row, i) => {
-          const isFirst = i === 0;
-          return (
-            <div
-              key={row.participantId}
-              className="kk-item-enter"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                background: isFirst ? "rgba(255,199,44,0.12)" : colors.card,
-                border: isFirst ? `1px solid ${colors.goldBorder}` : "none",
-                borderRadius: 12,
-                padding: "12px 16px",
-                animationDelay: `${200 + i * 80}ms`,
-              }}
-            >
-              <div style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: 16, color: isFirst ? colors.gold : colors.creamDim50, width: 18 }}>
-                {i + 1}
-              </div>
-              <Avatar
-                name={row.name}
-                avatarType={participantsMap[row.participantId]?.avatarType}
-                avatarValue={participantsMap[row.participantId]?.avatarValue}
-                size={28}
-              />
-              <div style={{ flex: 1, fontFamily: fonts.heading, fontWeight: 700, fontSize: 15, color: isFirst ? colors.gold : colors.cream }}>
-                {row.name}
-              </div>
-              <div style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: 14, color: isFirst ? colors.gold : colors.creamDim70 }}>
-                {format(row.value)}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      )}
     </ScreenShell>
   );
 }
