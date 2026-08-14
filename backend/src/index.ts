@@ -38,6 +38,17 @@ setIoInstance(io);
 registerSocketHandlers(io);
 
 const port = Number(process.env.PORT ?? 4000);
-httpServer.listen(port, () => {
-  console.log(`karaoke-koshien backend listening on :${port}`);
-});
+
+export function startServer() {
+  httpServer.listen(port, () => {
+    console.log(`karaoke-koshien backend listening on :${port}`);
+  });
+}
+
+// scripts/start.js経由で統合起動する場合はNext.jsの起動完了を待ってから
+// startServer()を呼び出したいので、requireされた時点では自動起動しない。
+// 単体で直接実行された場合（開発時のtsx watch、バックエンド単体デプロイ等）は
+// これまで通り即座に起動する。
+if (require.main === module) {
+  startServer();
+}
